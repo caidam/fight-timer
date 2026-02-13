@@ -1559,6 +1559,23 @@ export default function App() {
           }}>
             {activePreset.name}: {config.rounds}×{formatTimeShort(config.roundDuration)}, {formatTimeShort(config.restDuration)} rest
           </p>
+
+          {/* Install hint — only on mobile, not when already installed */}
+          {!window.matchMedia('(display-mode: standalone)').matches && /Mobi|Android/i.test(navigator.userAgent) &&
+            !localStorage.getItem('fight-timer-install-dismissed') && (
+            <p style={{
+              textAlign: 'center',
+              marginTop: '20px',
+              fontSize: '11px',
+              color: theme.textDim,
+              fontFamily: "'Oswald', sans-serif",
+              letterSpacing: '0.5px',
+              lineHeight: '1.6',
+              cursor: 'pointer'
+            }} onClick={() => { localStorage.setItem('fight-timer-install-dismissed', '1'); window.location.reload(); }}>
+              Install as app — tap browser menu → <em>Add to Home Screen</em> &nbsp;✕
+            </p>
+          )}
         </div>
       </div>
     );
