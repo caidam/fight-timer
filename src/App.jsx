@@ -22,6 +22,7 @@ export default function App() {
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [pendingImport, setPendingImport] = useState(null);
+  const [selectedImportIds, setSelectedImportIds] = useState({});
   const themePickerRef = useRef(null);
   const langPickerRef = useRef(null);
   const [hideSwitchLive, setHideSwitchLive] = useState(false);
@@ -71,7 +72,14 @@ export default function App() {
               // Load user's saved presets first
               setPresets(parsed.presets);
               setActivePresetId(parsed.activePresetId || parsed.presets[0].id);
-              // Show import prompt with the shared presets
+              // Pre-select non-duplicate shared presets
+              const sel = {};
+              decoded.presets.forEach(sp => {
+                if (!parsed.presets.some(ep => presetsMatch(sp, ep))) {
+                  sel[sp.id] = true;
+                }
+              });
+              setSelectedImportIds(sel);
               setPendingImport(decoded);
             }
           }
@@ -80,12 +88,6 @@ export default function App() {
           // No saved presets — load from URL directly (first visit or fresh install)
           setPresets(decoded.presets);
           setActivePresetId(decoded.activePresetId || decoded.presets[0].id);
-          if (decoded.themeInfo) {
-            setThemeId(decoded.themeInfo.themeId);
-            setThemeMode(decoded.themeInfo.themeMode);
-            localStorage.setItem('fight-timer-theme', decoded.themeInfo.themeId);
-            localStorage.setItem('fight-timer-mode', decoded.themeInfo.themeMode);
-          }
         }
         return;
       }
@@ -160,23 +162,38 @@ export default function App() {
     setPresets(newPresets);
   };
 
+  const presetsMatch = (a, b) =>
+    Number(a.rounds) === Number(b.rounds) &&
+    a.roundDuration === b.roundDuration &&
+    a.restDuration === b.restDuration &&
+    a.warmupDuration === b.warmupDuration &&
+    a.cooldownDuration === b.cooldownDuration &&
+    a.timingMode === b.timingMode &&
+    a.intenseMin === b.intenseMin &&
+    a.intenseMax === b.intenseMax &&
+    a.normalMin === b.normalMin &&
+    a.normalMax === b.normalMax &&
+    a.progressiveIntensity === b.progressiveIntensity &&
+    a.hideNextSwitch === b.hideNextSwitch;
+
+  const toggleImportSelection = (id) => {
+    setSelectedImportIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const handleImport = (action) => {
     if (!pendingImport) return;
-    const imported = pendingImport.presets;
     if (action === 'replace') {
+      const imported = pendingImport.presets;
       setPresets(imported);
       setActivePresetId(imported[0].id);
     } else if (action === 'add') {
-      setPresets(prev => [...prev, ...imported]);
-    }
-    if (action !== 'ignore' && pendingImport.themeInfo) {
-      setThemeId(pendingImport.themeInfo.themeId);
-      setThemeMode(pendingImport.themeInfo.themeMode);
-      localStorage.setItem('fight-timer-theme', pendingImport.themeInfo.themeId);
-      localStorage.setItem('fight-timer-mode', pendingImport.themeInfo.themeMode);
+      const toAdd = pendingImport.presets.filter(p => selectedImportIds[p.id]);
+      if (toAdd.length > 0) {
+        setPresets(prev => [...prev, ...toAdd]);
+      }
     }
     setPendingImport(null);
-    // Clear the shared URL hash
+    setSelectedImportIds({});
     window.history.replaceState(null, '', window.location.pathname);
   };
 
@@ -547,96 +564,158 @@ export default function App() {
           copyUrl={copyUrl}
           globalStyles={globalStyles}
         />
-        {pendingImport && (
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.6)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '24px'
-          }}>
+        {pendingImport && (() => {
+          const dupIds = new Set(
+            pendingImport.presets
+              .filter(sp => presets.some(ep => presetsMatch(sp, ep)))
+              .map(sp => sp.id)
+          );
+          const selCount = Object.keys(selectedImportIds).filter(id => selectedImportIds[id] && !dupIds.has(id)).length;
+          const allDups = dupIds.size === pendingImport.presets.length;
+
+          return (
             <div style={{
-              background: theme.modalBg,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '16px',
-              padding: '24px',
-              maxWidth: '360px',
-              width: '100%'
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              padding: '24px'
             }}>
-              <h3 style={{
-                margin: '0 0 16px 0',
-                color: theme.accent,
-                fontSize: '13px',
-                letterSpacing: '2px',
-                fontWeight: 400,
-                fontFamily: "'Bebas Neue', sans-serif"
-              }}>{t('import.title')}</h3>
-              <p style={{
-                margin: '0 0 8px 0',
-                color: theme.text,
-                fontSize: '14px',
-                fontFamily: "'Oswald', sans-serif",
-                lineHeight: 1.5
-              }}>{t('import.description')}</p>
               <div style={{
-                margin: '0 0 20px 0',
-                padding: '10px 14px',
                 background: theme.surface,
-                borderRadius: '8px',
-                border: `1px solid ${theme.border}`
+                border: `1px solid ${theme.border}`,
+                borderRadius: '16px',
+                padding: '24px',
+                maxWidth: '360px',
+                width: '100%'
               }}>
-                {pendingImport.presets.map(p => (
-                  <div key={p.id} style={{
-                    color: theme.text,
+                <h3 style={{
+                  margin: '0 0 16px 0',
+                  color: theme.accent,
+                  fontSize: '13px',
+                  letterSpacing: '2px',
+                  fontWeight: 400,
+                  fontFamily: "'Bebas Neue', sans-serif"
+                }}>{t('import.title')}</h3>
+                <p style={{
+                  margin: '0 0 12px 0',
+                  color: theme.text,
+                  fontSize: '14px',
+                  fontFamily: "'Oswald', sans-serif",
+                  lineHeight: 1.5
+                }}>{t('import.description')}</p>
+                <div style={{
+                  margin: '0 0 20px 0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px'
+                }}>
+                  {pendingImport.presets.map(p => {
+                    const isDup = dupIds.has(p.id);
+                    const isSelected = !isDup && selectedImportIds[p.id];
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => !isDup && toggleImportSelection(p.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          background: isSelected ? theme.surfaceHover : 'transparent',
+                          opacity: isDup ? 0.4 : 1,
+                          cursor: isDup ? 'default' : 'pointer',
+                          transition: 'background 0.15s ease'
+                        }}
+                      >
+                        <div style={{
+                          width: '16px',
+                          height: '16px',
+                          borderRadius: '4px',
+                          border: `1.5px solid ${isSelected ? theme.accentSolid : theme.border}`,
+                          background: isSelected ? theme.accentSolid : 'transparent',
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.15s ease'
+                        }}>
+                          {isSelected && <span style={{ color: theme.bg, fontSize: '10px', fontWeight: 700 }}>{'\u2713'}</span>}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ color: theme.text, fontSize: '14px', fontFamily: "'Oswald', sans-serif" }}>
+                            {p.name}
+                          </span>
+                          <span style={{ color: theme.textDim, fontSize: '14px', fontFamily: "'Oswald', sans-serif" }}>
+                            {' '}({p.rounds}&times;{formatTimeShort(p.roundDuration)})
+                          </span>
+                        </div>
+                        {isDup && (
+                          <span style={{ color: theme.textDim, fontSize: '11px', fontFamily: "'Oswald', sans-serif", letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+                            {t('import.existing')}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {allDups && (
+                  <p style={{
+                    color: theme.textDim,
+                    fontSize: '13px',
+                    fontFamily: "'Oswald', sans-serif",
+                    margin: '0 0 16px 0',
+                    lineHeight: 1.5
+                  }}>{t('import.allExist')}</p>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {!allDups && (
+                    <button onClick={() => handleImport('add')} disabled={selCount === 0} style={{
+                      padding: '12px',
+                      fontSize: '14px',
+                      fontFamily: "'Oswald', sans-serif",
+                      letterSpacing: '1px',
+                      background: selCount > 0 ? theme.accentSolid : theme.surface,
+                      border: 'none',
+                      borderRadius: '10px',
+                      color: selCount > 0 ? theme.bg : theme.textDim,
+                      cursor: selCount > 0 ? 'pointer' : 'default',
+                      opacity: selCount > 0 ? 1 : 0.5
+                    }}>{t('import.addCount', { count: selCount })}</button>
+                  )}
+                  {!allDups && (
+                    <button onClick={() => handleImport('replace')} style={{
+                      padding: '12px',
+                      fontSize: '14px',
+                      fontFamily: "'Oswald', sans-serif",
+                      letterSpacing: '1px',
+                      background: 'transparent',
+                      border: `1px solid ${theme.border}`,
+                      borderRadius: '10px',
+                      color: theme.textDim,
+                      cursor: 'pointer'
+                    }}>{t('import.replaceAll')}</button>
+                  )}
+                  <button onClick={() => handleImport('ignore')} style={{
+                    padding: '12px',
                     fontSize: '14px',
                     fontFamily: "'Oswald', sans-serif",
-                    padding: '2px 0'
-                  }}>
-                    {p.name} <span style={{ color: theme.textDim }}>({p.rounds}&times;{Math.floor(p.roundDuration / 60)}m)</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <button onClick={() => handleImport('add')} style={{
-                  padding: '12px',
-                  fontSize: '14px',
-                  fontFamily: "'Oswald', sans-serif",
-                  letterSpacing: '1px',
-                  background: theme.accentSolid,
-                  border: 'none',
-                  borderRadius: '10px',
-                  color: theme.bg,
-                  cursor: 'pointer'
-                }}>{t('import.add')}</button>
-                <button onClick={() => handleImport('replace')} style={{
-                  padding: '12px',
-                  fontSize: '14px',
-                  fontFamily: "'Oswald', sans-serif",
-                  letterSpacing: '1px',
-                  background: theme.surface,
-                  border: `1px solid ${theme.border}`,
-                  borderRadius: '10px',
-                  color: theme.text,
-                  cursor: 'pointer'
-                }}>{t('import.replace')}</button>
-                <button onClick={() => handleImport('ignore')} style={{
-                  padding: '12px',
-                  fontSize: '14px',
-                  fontFamily: "'Oswald', sans-serif",
-                  letterSpacing: '1px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '10px',
-                  color: theme.textDim,
-                  cursor: 'pointer'
-                }}>{t('import.ignore')}</button>
+                    letterSpacing: '1px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '10px',
+                    color: theme.textDim,
+                    cursor: 'pointer'
+                  }}>{t('import.ignore')}</button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </>
     );
   }

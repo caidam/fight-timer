@@ -95,9 +95,11 @@ export default {
   // Import
   'import.title': 'PR\u00C9R\u00C9GLAGES PARTAG\u00C9S',
   'import.description': 'Quelqu\u2019un a partag\u00E9 des pr\u00E9r\u00E9glages avec vous :',
-  'import.add': 'AJOUTER \u00C0 MES PR\u00C9R\u00C9GLAGES',
-  'import.replace': 'REMPLACER MES PR\u00C9R\u00C9GLAGES',
+  'import.addCount': 'AJOUTER LA S\u00C9LECTION ({count})',
+  'import.replaceAll': 'TOUT REMPLACER',
   'import.ignore': 'IGNORER',
+  'import.existing': 'D\u00E9j\u00E0 existant',
+  'import.allExist': 'Tous les pr\u00E9r\u00E9glages existent d\u00E9j\u00E0.',
 
   // Share
   'share.title': 'Fight Timer',

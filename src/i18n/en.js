@@ -95,9 +95,11 @@ export default {
   // Import
   'import.title': 'SHARED PRESETS',
   'import.description': 'Someone shared presets with you:',
-  'import.add': 'ADD TO MY PRESETS',
-  'import.replace': 'REPLACE MY PRESETS',
+  'import.addCount': 'ADD SELECTED ({count})',
+  'import.replaceAll': 'REPLACE ALL',
   'import.ignore': 'IGNORE',
+  'import.existing': 'Already exists',
+  'import.allExist': 'All shared presets already exist in your collection.',
 
   // Share
   'share.title': 'Fight Timer',
