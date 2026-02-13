@@ -21,6 +21,7 @@ export default function App() {
   const [shareToast, setShareToast] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [pendingImport, setPendingImport] = useState(null);
   const themePickerRef = useRef(null);
   const langPickerRef = useRef(null);
   const [hideSwitchLive, setHideSwitchLive] = useState(false);
@@ -59,13 +60,32 @@ export default function App() {
     if (hash) {
       const decoded = decodeStateCompact(hash);
       if (decoded && decoded.presets && decoded.presets.length > 0) {
-        setPresets(decoded.presets);
-        setActivePresetId(decoded.activePresetId || decoded.presets[0].id);
-        if (decoded.themeInfo) {
-          setThemeId(decoded.themeInfo.themeId);
-          setThemeMode(decoded.themeInfo.themeMode);
-          localStorage.setItem('fight-timer-theme', decoded.themeInfo.themeId);
-          localStorage.setItem('fight-timer-mode', decoded.themeInfo.themeMode);
+        // Check if user has existing saved presets
+        let hasSaved = false;
+        try {
+          const saved = localStorage.getItem('fight-timer-presets');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed.presets) && parsed.presets.length > 0) {
+              hasSaved = true;
+              // Load user's saved presets first
+              setPresets(parsed.presets);
+              setActivePresetId(parsed.activePresetId || parsed.presets[0].id);
+              // Show import prompt with the shared presets
+              setPendingImport(decoded);
+            }
+          }
+        } catch {}
+        if (!hasSaved) {
+          // No saved presets — load from URL directly (first visit or fresh install)
+          setPresets(decoded.presets);
+          setActivePresetId(decoded.activePresetId || decoded.presets[0].id);
+          if (decoded.themeInfo) {
+            setThemeId(decoded.themeInfo.themeId);
+            setThemeMode(decoded.themeInfo.themeMode);
+            localStorage.setItem('fight-timer-theme', decoded.themeInfo.themeId);
+            localStorage.setItem('fight-timer-mode', decoded.themeInfo.themeMode);
+          }
         }
         return;
       }
@@ -138,6 +158,26 @@ export default function App() {
 
   const reorderPresets = (newPresets) => {
     setPresets(newPresets);
+  };
+
+  const handleImport = (action) => {
+    if (!pendingImport) return;
+    const imported = pendingImport.presets;
+    if (action === 'replace') {
+      setPresets(imported);
+      setActivePresetId(imported[0].id);
+    } else if (action === 'add') {
+      setPresets(prev => [...prev, ...imported]);
+    }
+    if (action !== 'ignore' && pendingImport.themeInfo) {
+      setThemeId(pendingImport.themeInfo.themeId);
+      setThemeMode(pendingImport.themeInfo.themeMode);
+      localStorage.setItem('fight-timer-theme', pendingImport.themeInfo.themeId);
+      localStorage.setItem('fight-timer-mode', pendingImport.themeInfo.themeMode);
+    }
+    setPendingImport(null);
+    // Clear the shared URL hash
+    window.history.replaceState(null, '', window.location.pathname);
   };
 
   // Wake lock
@@ -473,39 +513,131 @@ export default function App() {
 
   if (screen === 'config') {
     return (
-      <ConfigScreen
-        containerRef={containerRef}
-        theme={theme}
-        themeId={themeId}
-        themeMode={themeMode}
-        showThemePicker={showThemePicker}
-        setShowThemePicker={setShowThemePicker}
-        themePickerRef={themePickerRef}
-        changeTheme={changeTheme}
-        toggleMode={toggleMode}
-        showHelp={showHelp}
-        setShowHelp={setShowHelp}
-        shareToast={shareToast}
-        presets={presets}
-        activePresetId={activePresetId}
-        setActivePresetId={setActivePresetId}
-        addPreset={addPreset}
-        deletePreset={deletePreset}
-        renamePreset={renamePreset}
-        reorderPresets={reorderPresets}
-        activePreset={activePreset}
-        config={config}
-        updateActivePreset={updateActivePreset}
-        setTimingMode={setTimingMode}
-        setRoundDuration={setRoundDuration}
-        startTraining={startTraining}
-        shareConfig={shareConfig}
-        showLangPicker={showLangPicker}
-        setShowLangPicker={setShowLangPicker}
-        langPickerRef={langPickerRef}
-        copyUrl={copyUrl}
-        globalStyles={globalStyles}
-      />
+      <>
+        <ConfigScreen
+          containerRef={containerRef}
+          theme={theme}
+          themeId={themeId}
+          themeMode={themeMode}
+          showThemePicker={showThemePicker}
+          setShowThemePicker={setShowThemePicker}
+          themePickerRef={themePickerRef}
+          changeTheme={changeTheme}
+          toggleMode={toggleMode}
+          showHelp={showHelp}
+          setShowHelp={setShowHelp}
+          shareToast={shareToast}
+          presets={presets}
+          activePresetId={activePresetId}
+          setActivePresetId={setActivePresetId}
+          addPreset={addPreset}
+          deletePreset={deletePreset}
+          renamePreset={renamePreset}
+          reorderPresets={reorderPresets}
+          activePreset={activePreset}
+          config={config}
+          updateActivePreset={updateActivePreset}
+          setTimingMode={setTimingMode}
+          setRoundDuration={setRoundDuration}
+          startTraining={startTraining}
+          shareConfig={shareConfig}
+          showLangPicker={showLangPicker}
+          setShowLangPicker={setShowLangPicker}
+          langPickerRef={langPickerRef}
+          copyUrl={copyUrl}
+          globalStyles={globalStyles}
+        />
+        {pendingImport && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '24px'
+          }}>
+            <div style={{
+              background: theme.modalBg,
+              border: `1px solid ${theme.border}`,
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '360px',
+              width: '100%'
+            }}>
+              <h3 style={{
+                margin: '0 0 16px 0',
+                color: theme.accent,
+                fontSize: '13px',
+                letterSpacing: '2px',
+                fontWeight: 400,
+                fontFamily: "'Bebas Neue', sans-serif"
+              }}>{t('import.title')}</h3>
+              <p style={{
+                margin: '0 0 8px 0',
+                color: theme.text,
+                fontSize: '14px',
+                fontFamily: "'Oswald', sans-serif",
+                lineHeight: 1.5
+              }}>{t('import.description')}</p>
+              <div style={{
+                margin: '0 0 20px 0',
+                padding: '10px 14px',
+                background: theme.surface,
+                borderRadius: '8px',
+                border: `1px solid ${theme.border}`
+              }}>
+                {pendingImport.presets.map(p => (
+                  <div key={p.id} style={{
+                    color: theme.text,
+                    fontSize: '14px',
+                    fontFamily: "'Oswald', sans-serif",
+                    padding: '2px 0'
+                  }}>
+                    {p.name} <span style={{ color: theme.textDim }}>({p.rounds}&times;{Math.floor(p.roundDuration / 60)}m)</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button onClick={() => handleImport('add')} style={{
+                  padding: '12px',
+                  fontSize: '14px',
+                  fontFamily: "'Oswald', sans-serif",
+                  letterSpacing: '1px',
+                  background: theme.accentSolid,
+                  border: 'none',
+                  borderRadius: '10px',
+                  color: theme.bg,
+                  cursor: 'pointer'
+                }}>{t('import.add')}</button>
+                <button onClick={() => handleImport('replace')} style={{
+                  padding: '12px',
+                  fontSize: '14px',
+                  fontFamily: "'Oswald', sans-serif",
+                  letterSpacing: '1px',
+                  background: theme.surface,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: '10px',
+                  color: theme.text,
+                  cursor: 'pointer'
+                }}>{t('import.replace')}</button>
+                <button onClick={() => handleImport('ignore')} style={{
+                  padding: '12px',
+                  fontSize: '14px',
+                  fontFamily: "'Oswald', sans-serif",
+                  letterSpacing: '1px',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: '10px',
+                  color: theme.textDim,
+                  cursor: 'pointer'
+                }}>{t('import.ignore')}</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 

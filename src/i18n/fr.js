@@ -92,6 +92,13 @@ export default {
   'mode.custom.name': 'Personnalis\u00E9',
   'mode.custom.description': 'D\u00E9finissez vos propres intervalles.',
 
+  // Import
+  'import.title': 'PR\u00C9R\u00C9GLAGES PARTAG\u00C9S',
+  'import.description': 'Quelqu\u2019un a partag\u00E9 des pr\u00E9r\u00E9glages avec vous :',
+  'import.add': 'AJOUTER \u00C0 MES PR\u00C9R\u00C9GLAGES',
+  'import.replace': 'REMPLACER MES PR\u00C9R\u00C9GLAGES',
+  'import.ignore': 'IGNORER',
+
   // Share
   'share.title': 'Fight Timer',
   'share.text': 'D\u00E9couvre mon pr\u00E9r\u00E9glage d\u2019entra\u00EEnement : {name}',

@@ -92,6 +92,13 @@ export default {
   'mode.custom.name': 'Custom',
   'mode.custom.description': 'Set your own timing ranges.',
 
+  // Import
+  'import.title': 'SHARED PRESETS',
+  'import.description': 'Someone shared presets with you:',
+  'import.add': 'ADD TO MY PRESETS',
+  'import.replace': 'REPLACE MY PRESETS',
+  'import.ignore': 'IGNORE',
+
   // Share
   'share.title': 'Fight Timer',
   'share.text': 'Check out my training preset: {name}',
