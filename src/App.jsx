@@ -53,7 +53,7 @@ export default function App() {
   const activePreset = presets.find(p => p.id === activePresetId) || presets[0];
   const config = useMemo(() => applyTimingMode(activePreset), [presets, activePresetId]);
 
-  // Load state from URL on mount
+  // Load state from URL on mount, fall back to localStorage (for PWA launches)
   useEffect(() => {
     const hash = window.location.hash.slice(1);
     if (hash) {
@@ -70,14 +70,27 @@ export default function App() {
         return;
       }
     }
+    // No URL hash — try localStorage (PWA / direct visit)
+    try {
+      const saved = localStorage.getItem('fight-timer-presets');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.presets) && parsed.presets.length > 0) {
+          setPresets(parsed.presets);
+          setActivePresetId(parsed.activePresetId || parsed.presets[0].id);
+          return;
+        }
+      }
+    } catch {}
     setActivePresetId(presets[0].id);
   }, []);
 
-  // Update URL when presets or theme change
+  // Update URL and localStorage when presets or theme change
   useEffect(() => {
     if (activePresetId) {
       const encoded = encodeStateCompact(presets, activePresetId);
       window.history.replaceState(null, '', `#${encoded}@${themeId}.${themeMode}`);
+      localStorage.setItem('fight-timer-presets', JSON.stringify({ presets, activePresetId }));
     }
   }, [presets, activePresetId, themeId, themeMode]);
 
