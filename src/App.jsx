@@ -519,8 +519,8 @@ const TimeInput = ({ value, onChange, label, isSeconds = false, placeholder, dis
           background: disabled ? 'transparent' : (theme ? theme.surface : 'rgba(255,255,255,0.05)'),
           border: `1.5px solid ${disabled ? (theme ? theme.border : 'rgba(255,255,255,0.06)') : (theme ? theme.inputBorder : 'rgba(255,255,255,0.12)')}`,
           color: disabled ? (theme ? theme.textDim : 'rgba(255,255,255,0.4)') : (theme ? theme.text : '#fff'),
-          padding: '14px 16px',
-          fontSize: '22px',
+          padding: '12px 8px',
+          fontSize: '18px',
           fontFamily: "'Oswald', sans-serif",
           width: '100%',
           borderRadius: '10px',
@@ -529,6 +529,49 @@ const TimeInput = ({ value, onChange, label, isSeconds = false, placeholder, dis
           cursor: disabled ? 'not-allowed' : 'text'
         }}
       />
+    </div>
+  );
+};
+
+// Collapsible help section
+const HelpSection = ({ title, children, defaultOpen = false, theme: t }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ borderBottom: `1px solid ${t.border}` }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '14px 0',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: "'Oswald', sans-serif",
+          fontSize: '14px',
+          letterSpacing: '1.5px',
+          color: t.accentSolid
+        }}
+      >
+        {title}
+        <span style={{
+          fontSize: '18px',
+          color: t.textDim,
+          transform: open ? 'rotate(90deg)' : 'rotate(0)',
+          transition: 'transform 0.25s ease'
+        }}>›</span>
+      </button>
+      <div style={{
+        overflow: 'hidden',
+        maxHeight: open ? '500px' : '0',
+        opacity: open ? 1 : 0,
+        transition: 'max-height 0.35s ease, opacity 0.25s ease',
+        paddingBottom: open ? '14px' : '0'
+      }}>
+        {children}
+      </div>
     </div>
   );
 };
@@ -558,7 +601,7 @@ const HelpModal = ({ onClose, theme }) => {
       overflowY: 'auto',
       border: `1px solid ${t.border}`
     }} onClick={e => e.stopPropagation()}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <h2 style={{ margin: 0, fontSize: '26px', letterSpacing: '2px', color: t.accentSolid }}>HOW IT WORKS</h2>
         <button onClick={onClose} style={{
           background: 'none',
@@ -571,59 +614,74 @@ const HelpModal = ({ onClose, theme }) => {
       </div>
 
       <div style={{ fontFamily: "'Oswald', sans-serif", fontSize: '14px', lineHeight: '1.5', color: t.text }}>
-        <section style={{ marginBottom: '20px' }}>
-          <h3 style={{ color: t.accentSolid, fontSize: '16px', margin: '0 0 10px 0', letterSpacing: '1px' }}>CONCEPT</h3>
+        <HelpSection title="CONCEPT" defaultOpen={true} theme={t}>
           <p style={{ margin: 0 }}>
             Randomly alternates between <span style={{ color: '#ff3200' }}>INTENSE</span> and <span style={{ color: '#32c864' }}>NORMAL</span> periods within each round. Simulates the unpredictable rhythm of a real fight.
           </p>
-        </section>
+        </HelpSection>
 
-        <section style={{ marginBottom: '20px' }}>
-          <h3 style={{ color: t.accentSolid, fontSize: '16px', margin: '0 0 10px 0', letterSpacing: '1px' }}>TIMING MODES</h3>
+        <HelpSection title="TIMING MODES" theme={t}>
           <div style={{ display: 'grid', gap: '8px' }}>
-            <div style={{ background: t.surface, borderRadius: '6px', padding: '10px' }}>
-              <strong>⚡ Chaos</strong> — 8-12 switches/round. Street fight feel.
-            </div>
-            <div style={{ background: t.surface, borderRadius: '6px', padding: '10px' }}>
-              <strong>⚖️ Balanced</strong> — 5-7 switches/round. Competition pace.
-            </div>
-            <div style={{ background: t.surface, borderRadius: '6px', padding: '10px' }}>
-              <strong>🏔️ Endurance</strong> — 3-4 switches/round. Sustained pressure.
-            </div>
-            <div style={{ background: t.surface, borderRadius: '6px', padding: '10px' }}>
-              <strong>🎛️ Custom</strong> — Set your own min/max ranges.
-            </div>
+            {Object.entries(TIMING_MODES).map(([key, mode]) => (
+              <div key={key} style={{ background: t.surface, borderRadius: '6px', padding: '10px' }}>
+                <strong>{mode.emoji} {mode.name}</strong> — {mode.description}
+              </div>
+            ))}
           </div>
-        </section>
+        </HelpSection>
 
-        <section style={{ marginBottom: '20px' }}>
-          <h3 style={{ color: t.accentSolid, fontSize: '16px', margin: '0 0 10px 0', letterSpacing: '1px' }}>OPTIONS</h3>
+        <HelpSection title="OPTIONS" theme={t}>
           <div style={{ display: 'grid', gap: '10px' }}>
             <div>
               <strong style={{ color: t.accentSolid }}>Progressive Intensity</strong><br/>
               <span style={{ color: t.textDim }}>Each round gets harder: intense periods grow +12%/round, recovery shrinks -12%/round. Simulates late-fight fatigue.</span>
             </div>
             <div>
-              <strong style={{ color: t.textDim }}>Hide Countdown</strong><br/>
+              <strong style={{ color: t.text }}>Hide Countdown</strong><br/>
               <span style={{ color: t.textDim }}>Start with countdown hidden. Can toggle during training.</span>
             </div>
           </div>
-        </section>
+        </HelpSection>
 
-        <section style={{ marginBottom: '20px' }}>
-          <h3 style={{ color: t.accentSolid, fontSize: '16px', margin: '0 0 10px 0', letterSpacing: '1px' }}>AUDIO CUES</h3>
+        <HelpSection title="AUDIO CUES" theme={t}>
           <div style={{ color: t.textDim }}>
             <div>🔴 Double bell tap → INTENSE</div>
             <div>🟢 Single bell tap → NORMAL</div>
           </div>
-        </section>
+        </HelpSection>
 
-        <section>
-          <h3 style={{ color: t.accentSolid, fontSize: '16px', margin: '0 0 10px 0', letterSpacing: '1px' }}>PRESETS & SHARING</h3>
-          <p style={{ margin: 0, color: t.textDim }}>
-            Create multiple presets, all saved in the URL. Use SHARE to send via WhatsApp/Messages or COPY URL to bookmark.
+        <HelpSection title="SAVING & SHARING" theme={t}>
+          <div style={{ display: 'grid', gap: '10px', color: t.textDim }}>
+            <div>
+              <strong style={{ color: t.text }}>Your settings are saved in the URL</strong><br/>
+              Bookmark the page or use <strong style={{ color: t.text }}>COPY URL</strong> to save it anywhere.
+            </div>
+            <div>
+              <strong style={{ color: t.text }}>Share with a training partner</strong><br/>
+              Tap <strong style={{ color: t.text }}>SHARE</strong> to send your config via WhatsApp, Messages, or any app.
+            </div>
+            <div>
+              <strong style={{ color: t.text }}>Multiple presets</strong><br/>
+              Create different configs and switch between them. All presets travel with the URL.
+            </div>
+          </div>
+        </HelpSection>
+
+        <HelpSection title="INSTALL ON YOUR PHONE" theme={t}>
+          <p style={{ margin: '0 0 10px 0', color: t.textDim }}>
+            Add to your home screen for full-screen offline use — no app store needed.
           </p>
-        </section>
+          <div style={{ display: 'grid', gap: '8px' }}>
+            <div style={{ background: t.surface, borderRadius: '6px', padding: '10px', color: t.textDim }}>
+              <strong style={{ color: t.text }}>iPhone / iPad</strong><br/>
+              Safari → share (□↑) → "Add to Home Screen"
+            </div>
+            <div style={{ background: t.surface, borderRadius: '6px', padding: '10px', color: t.textDim }}>
+              <strong style={{ color: t.text }}>Android</strong><br/>
+              Chrome → menu (⋮) → "Add to Home screen" or "Install app"
+            </div>
+          </div>
+        </HelpSection>
       </div>
     </div>
   </div>
@@ -810,6 +868,8 @@ export default function App() {
   const [wakeLock, setWakeLock] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [shareToast, setShareToast] = useState(false);
+  const [showThemePicker, setShowThemePicker] = useState(false);
+  const themePickerRef = useRef(null);
   const [hideSwitchLive, setHideSwitchLive] = useState(false);
   const [themeId, setThemeId] = useState(() => {
     const stored = localStorage.getItem('fight-timer-theme');
@@ -987,6 +1047,18 @@ export default function App() {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme.bg);
   }, [theme]);
+
+  // Close theme picker on outside click
+  useEffect(() => {
+    if (!showThemePicker) return;
+    const handleClick = (e) => {
+      if (themePickerRef.current && !themePickerRef.current.contains(e.target)) {
+        setShowThemePicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showThemePicker]);
 
   // Share URL - native share on mobile, copy on desktop
   const shareConfig = async () => {
@@ -1244,27 +1316,61 @@ export default function App() {
               }}>RANDOM INTENSITY TRAINING</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {/* Theme picker */}
-              <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-                {Object.entries(THEMES).map(([id, { swatch }]) => (
-                  <button
-                    key={id}
-                    onClick={() => changeTheme(id)}
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '50%',
-                      background: swatch,
-                      border: '1.5px solid rgba(128,128,128,0.25)',
-                      cursor: 'pointer',
-                      padding: 0,
-                      opacity: themeId === id ? 1 : 0.45,
-                      boxShadow: themeId === id
-                        ? `0 0 0 2px ${theme.bg}, 0 0 0 3.5px ${swatch}`
-                        : 'none'
-                    }}
-                  />
-                ))}
+              {/* Theme picker — circles unfold from trigger */}
+              <div ref={themePickerRef} style={{ position: 'relative', height: '22px' }}>
+                {(() => {
+                  const ids = Object.keys(THEMES);
+                  const otherIds = ids.filter(id => id !== themeId);
+                  return (
+                    <>
+                      {/* Other theme circles — positioned behind trigger, fan out when open */}
+                      {otherIds.map((id, i) => (
+                        <button
+                          key={id}
+                          onClick={() => { changeTheme(id); setShowThemePicker(false); }}
+                          style={{
+                            position: 'absolute',
+                            right: 0,
+                            top: 0,
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            background: THEMES[id].swatch,
+                            border: '1.5px solid rgba(128,128,128,0.25)',
+                            cursor: 'pointer',
+                            padding: 0,
+                            transform: showThemePicker
+                              ? `translateX(-${(i + 1) * 28}px)`
+                              : 'translateX(0)',
+                            opacity: showThemePicker ? 1 : 0,
+                            transition: `transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 0.04}s, opacity 0.2s ease ${showThemePicker ? i * 0.04 : 0}s`,
+                            zIndex: 10 - i,
+                            pointerEvents: showThemePicker ? 'auto' : 'none'
+                          }}
+                        />
+                      ))}
+                      {/* Trigger — active theme circle */}
+                      <button
+                        onClick={() => setShowThemePicker(!showThemePicker)}
+                        style={{
+                          position: 'relative',
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          background: THEMES[themeId].swatch,
+                          border: '1.5px solid rgba(128,128,128,0.25)',
+                          cursor: 'pointer',
+                          padding: 0,
+                          zIndex: 20,
+                          boxShadow: !showThemePicker
+                            ? `0 0 0 2px ${theme.bg}, 0 0 0 3.5px ${THEMES[themeId].swatch}`
+                            : 'none',
+                          transition: 'box-shadow 0.2s ease'
+                        }}
+                      />
+                    </>
+                  );
+                })()}
               </div>
               {/* Light/dark toggle */}
               <button onClick={toggleMode} style={{
@@ -1339,8 +1445,8 @@ export default function App() {
                       background: theme.surface,
                       border: `1.5px solid ${theme.inputBorder}`,
                       color: theme.text,
-                      padding: '14px 8px',
-                      fontSize: '22px',
+                      padding: '12px 8px',
+                      fontSize: '18px',
                       fontFamily: "'Oswald', sans-serif",
                       width: '100%',
                       borderRadius: '10px',
@@ -1560,22 +1666,7 @@ export default function App() {
             {activePreset.name}: {config.rounds}×{formatTimeShort(config.roundDuration)}, {formatTimeShort(config.restDuration)} rest
           </p>
 
-          {/* Install hint — only on mobile, not when already installed */}
-          {!window.matchMedia('(display-mode: standalone)').matches && /Mobi|Android/i.test(navigator.userAgent) &&
-            !localStorage.getItem('fight-timer-install-dismissed') && (
-            <p style={{
-              textAlign: 'center',
-              marginTop: '20px',
-              fontSize: '11px',
-              color: theme.textDim,
-              fontFamily: "'Oswald', sans-serif",
-              letterSpacing: '0.5px',
-              lineHeight: '1.6',
-              cursor: 'pointer'
-            }} onClick={() => { localStorage.setItem('fight-timer-install-dismissed', '1'); window.location.reload(); }}>
-              Install as app — tap browser menu → <em>Add to Home Screen</em> &nbsp;✕
-            </p>
-          )}
+
         </div>
       </div>
     );
@@ -1755,21 +1846,6 @@ export default function App() {
         </button>
       </div>
 
-      {wakeLock && (
-        <div style={{
-          position: 'absolute',
-          top: '16px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          fontSize: '10px',
-          fontFamily: "'Oswald', sans-serif",
-          color: 'rgba(255,255,255,0.3)',
-          letterSpacing: '1px'
-        }}>
-          🔒 SCREEN ON
-        </div>
-      )}
-
       <div style={{
         fontSize: 'clamp(26px, 8vw, 48px)',
         letterSpacing: '5px',
@@ -1792,24 +1868,31 @@ export default function App() {
         {formatTime(timerState.timeRemaining)}
       </div>
 
-      {!timerState.isResting && !hideSwitchLive && (
+      {!timerState.isResting && (
         <div style={{
-          marginTop: '14px',
-          fontSize: '15px',
-          fontFamily: "'Oswald', sans-serif",
-          color: 'rgba(255,255,255,0.4)',
-          letterSpacing: '2px'
+          overflow: 'hidden',
+          maxHeight: hideSwitchLive ? '0' : '40px',
+          opacity: hideSwitchLive ? 0 : 1,
+          transition: 'max-height 0.3s ease, opacity 0.2s ease',
+          marginTop: '14px'
         }}>
-          SWITCH IN ~{switchIn}s
+          <div style={{
+            fontSize: '15px',
+            fontFamily: "'Oswald', sans-serif",
+            color: 'rgba(255,255,255,0.4)',
+            letterSpacing: '2px'
+          }}>
+            SWITCH IN ~{switchIn}s
+          </div>
         </div>
       )}
 
       {/* Toggle switch visibility button */}
       {!timerState.isResting && (
-        <button 
+        <button
           onClick={() => setHideSwitchLive(prev => !prev)}
           style={{
-            marginTop: hideSwitchLive ? '14px' : '8px',
+            marginTop: '8px',
             padding: '8px 16px',
             fontSize: '12px',
             fontFamily: "'Oswald', sans-serif",

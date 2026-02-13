@@ -13,6 +13,13 @@ Single-file React app. No backend, no accounts — config lives in the URL for e
 - 4 color themes with light/dark variants
 - Installable as a PWA (works offline on mobile)
 
+## Install on mobile
+
+No app store needed. Add to your home screen for a full-screen app that works offline:
+
+- **iPhone/iPad**: Open in Safari → tap share (□↑) → "Add to Home Screen"
+- **Android**: Open in Chrome → tap menu (⋮) → "Add to Home screen" or "Install app"
+
 ## Development
 
 ```bash
