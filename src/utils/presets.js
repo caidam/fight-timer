@@ -12,7 +12,9 @@ export const createDefaultPreset = (name = 'Preset 1') => ({
   normalMin: 20,
   normalMax: 35,
   progressiveIntensity: false,
-  hideNextSwitch: false
+  hideNextSwitch: false,
+  warmupDuration: 0,
+  cooldownDuration: 0
 });
 
 export const applyTimingMode = (preset) => {

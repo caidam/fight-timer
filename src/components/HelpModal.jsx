@@ -68,6 +68,10 @@ const HelpModal = ({ onClose, theme }) => {
               <strong style={{ color: th.text }}>{t('help.hideCountdown')}</strong><br/>
               <span style={{ color: th.textDim }}>{t('help.hideCountdownDesc')}</span>
             </div>
+            <div>
+              <strong style={{ color: th.text }}>{t('help.warmupCooldown')}</strong><br/>
+              <span style={{ color: th.textDim }}>{t('help.warmupCooldownDesc')}</span>
+            </div>
           </div>
         </HelpSection>
 

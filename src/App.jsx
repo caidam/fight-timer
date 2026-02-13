@@ -41,7 +41,8 @@ export default function App() {
     switchTarget: 0,
     warningPlayed: false,
     totalIntenseTime: 0,
-    totalNormalTime: 0
+    totalNormalTime: 0,
+    phase: 'training'
   });
 
   const intervalRef = useRef(null);
@@ -270,22 +271,40 @@ export default function App() {
       await audioContext.resume();
     }
     await requestWakeLock();
-    const initialDuration = calculatePeriodDuration('normal', 1);
-    setTimerState({
-      currentRound: 1,
-      timeRemaining: config.roundDuration,
-      isResting: false,
-      isRunning: true,
-      intensity: 'normal',
-      nextSwitch: initialDuration,
-      switchTarget: Math.max(1, config.roundDuration - initialDuration),
-      warningPlayed: false,
-      totalIntenseTime: 0,
-      totalNormalTime: 0
-    });
+
+    if (config.warmupDuration > 0) {
+      setTimerState({
+        currentRound: 1,
+        timeRemaining: config.warmupDuration,
+        isResting: false,
+        isRunning: true,
+        intensity: 'warmup',
+        nextSwitch: 0,
+        switchTarget: 0,
+        warningPlayed: false,
+        totalIntenseTime: 0,
+        totalNormalTime: 0,
+        phase: 'warmup'
+      });
+    } else {
+      const initialDuration = calculatePeriodDuration('normal', 1);
+      setTimerState({
+        currentRound: 1,
+        timeRemaining: config.roundDuration,
+        isResting: false,
+        isRunning: true,
+        intensity: 'normal',
+        nextSwitch: initialDuration,
+        switchTarget: Math.max(1, config.roundDuration - initialDuration),
+        warningPlayed: false,
+        totalIntenseTime: 0,
+        totalNormalTime: 0,
+        phase: 'training'
+      });
+      setTimeout(() => sounds.roundStart(), 100);
+    }
     setScreen('training');
     setHideSwitchLive(config.hideNextSwitch);
-    setTimeout(() => sounds.roundStart(), 100);
   };
 
   const togglePause = () => {
@@ -309,13 +328,49 @@ export default function App() {
     intervalRef.current = setInterval(() => {
       const prev = timerStateRef.current;
 
+      // Warmup tick
+      if (prev.phase === 'warmup') {
+        if (prev.timeRemaining <= 1) {
+          const initialDuration = calculatePeriodDuration('normal', 1);
+          sounds.roundStart();
+          setTimerState({
+            ...prev,
+            phase: 'training',
+            timeRemaining: config.roundDuration,
+            intensity: 'normal',
+            nextSwitch: initialDuration,
+            switchTarget: Math.max(1, config.roundDuration - initialDuration)
+          });
+        } else {
+          setTimerState({ ...prev, timeRemaining: prev.timeRemaining - 1 });
+        }
+        return;
+      }
+
+      // Cooldown tick
+      if (prev.phase === 'cooldown') {
+        if (prev.timeRemaining <= 1) {
+          sounds.finalEnd();
+          releaseWakeLock();
+          setTimeout(() => setScreen('summary'), 500);
+          setTimerState({ ...prev, isRunning: false, timeRemaining: 0 });
+        } else {
+          setTimerState({ ...prev, timeRemaining: prev.timeRemaining - 1 });
+        }
+        return;
+      }
+
       if (prev.timeRemaining <= 1) {
         if (prev.isResting) {
           if (prev.currentRound >= config.rounds) {
-            sounds.finalEnd();
-            releaseWakeLock();
-            setTimeout(() => setScreen('summary'), 500);
-            setTimerState({ ...prev, isRunning: false, timeRemaining: 0 });
+            if (config.cooldownDuration > 0) {
+              setTimerState({ ...prev, phase: 'cooldown', timeRemaining: config.cooldownDuration, isResting: false, intensity: 'cooldown' });
+            } else {
+              sounds.finalEnd();
+              releaseWakeLock();
+              setTimeout(() => setScreen('summary'), 500);
+              setTimerState({ ...prev, isRunning: false, timeRemaining: 0 });
+            }
             return;
           }
           const newDuration = calculatePeriodDuration('normal', prev.currentRound + 1);
@@ -334,9 +389,13 @@ export default function App() {
         } else {
           sounds.roundEnd();
           if (prev.currentRound >= config.rounds) {
-            releaseWakeLock();
-            setTimeout(() => setScreen('summary'), 500);
-            setTimerState({ ...prev, isRunning: false, timeRemaining: 0, isResting: false });
+            if (config.cooldownDuration > 0) {
+              setTimerState({ ...prev, phase: 'cooldown', timeRemaining: config.cooldownDuration, isResting: false, intensity: 'cooldown' });
+            } else {
+              releaseWakeLock();
+              setTimeout(() => setScreen('summary'), 500);
+              setTimerState({ ...prev, isRunning: false, timeRemaining: 0, isResting: false });
+            }
             return;
           }
           setTimerState({
@@ -456,6 +515,7 @@ export default function App() {
       toggleFullscreen={toggleFullscreen}
       togglePause={togglePause}
       stopTraining={stopTraining}
+      phase={timerState.phase}
     />
   );
 }

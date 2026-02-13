@@ -14,6 +14,14 @@ const intensityColors = {
   rest: {
     bg: 'radial-gradient(circle at 50% 30%, #3264c8 0%, #1a3264 50%, #000a1a 100%)',
     glow: 'rgba(50,100,200,0.4)'
+  },
+  warmup: {
+    bg: 'radial-gradient(circle at 50% 30%, #c89632 0%, #645020 50%, #1a1400 100%)',
+    glow: 'rgba(200,150,50,0.4)'
+  },
+  cooldown: {
+    bg: 'radial-gradient(circle at 50% 30%, #3264c8 0%, #1a3264 50%, #000a1a 100%)',
+    glow: 'rgba(50,100,200,0.4)'
   }
 };
 
@@ -27,7 +35,8 @@ const TrainingScreen = ({
   setHideSwitchLive,
   toggleFullscreen,
   togglePause,
-  stopTraining
+  stopTraining,
+  phase
 }) => {
   const { t } = useT();
   const currentColors = intensityColors[timerState.intensity] || intensityColors.normal;
@@ -71,15 +80,23 @@ const TrainingScreen = ({
         alignItems: 'flex-start'
       }}>
         <div>
-          <div style={{
-            fontSize: '11px',
-            fontFamily: "'Oswald', sans-serif",
-            color: 'rgba(255,255,255,0.5)',
-            letterSpacing: '2px'
-          }}>{t('training.round')}</div>
-          <div style={{ fontSize: '40px', letterSpacing: '2px' }}>
-            {timerState.currentRound}/{config.rounds}
-          </div>
+          {phase === 'warmup' || phase === 'cooldown' ? (
+            <div style={{ fontSize: '28px', letterSpacing: '2px' }}>
+              {t(`training.${phase}`)}
+            </div>
+          ) : (
+            <>
+              <div style={{
+                fontSize: '11px',
+                fontFamily: "'Oswald', sans-serif",
+                color: 'rgba(255,255,255,0.5)',
+                letterSpacing: '2px'
+              }}>{t('training.round')}</div>
+              <div style={{ fontSize: '40px', letterSpacing: '2px' }}>
+                {timerState.currentRound}/{config.rounds}
+              </div>
+            </>
+          )}
         </div>
 
         <button onClick={toggleFullscreen} style={{
@@ -95,17 +112,19 @@ const TrainingScreen = ({
         </button>
       </div>
 
-      <div style={{
-        fontSize: 'clamp(26px, 8vw, 48px)',
-        letterSpacing: '5px',
-        marginBottom: '12px',
-        textTransform: 'uppercase',
-        animation: timerState.intensity === 'intense'
-          ? 'intensePulse 0.5s ease infinite'
-          : 'none'
-      }}>
-        {t(`training.${timerState.intensity}`)}
-      </div>
+      {phase !== 'warmup' && phase !== 'cooldown' && (
+        <div style={{
+          fontSize: 'clamp(26px, 8vw, 48px)',
+          letterSpacing: '5px',
+          marginBottom: '12px',
+          textTransform: 'uppercase',
+          animation: timerState.intensity === 'intense'
+            ? 'intensePulse 0.5s ease infinite'
+            : 'none'
+        }}>
+          {t(`training.${timerState.intensity}`)}
+        </div>
+      )}
 
       <div style={{
         fontSize: 'clamp(90px, 28vw, 170px)',
@@ -117,7 +136,7 @@ const TrainingScreen = ({
         {formatTime(timerState.timeRemaining)}
       </div>
 
-      {!timerState.isResting && (
+      {!timerState.isResting && phase === 'training' && (
         <div style={{
           overflow: 'hidden',
           maxHeight: hideSwitchLive ? '0' : '40px',
@@ -137,7 +156,7 @@ const TrainingScreen = ({
       )}
 
       {/* Toggle switch visibility button */}
-      {!timerState.isResting && (
+      {!timerState.isResting && phase === 'training' && (
         <button
           onClick={() => setHideSwitchLive(prev => !prev)}
           style={{
@@ -193,25 +212,27 @@ const TrainingScreen = ({
         </button>
       </div>
 
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        display: 'flex',
-        gap: '6px'
-      }}>
-        {Array.from({ length: config.rounds }, (_, i) => (
-          <div key={i} style={{
-            width: '32px',
-            height: '6px',
-            borderRadius: '3px',
-            background: i < timerState.currentRound - 1
-              ? '#32c864'
-              : i === timerState.currentRound - 1
-                ? 'rgba(255,255,255,0.8)'
-                : 'rgba(255,255,255,0.2)'
-          }} />
-        ))}
-      </div>
+      {phase !== 'warmup' && phase !== 'cooldown' && (
+        <div style={{
+          position: 'absolute',
+          bottom: '20px',
+          display: 'flex',
+          gap: '6px'
+        }}>
+          {Array.from({ length: config.rounds }, (_, i) => (
+            <div key={i} style={{
+              width: '32px',
+              height: '6px',
+              borderRadius: '3px',
+              background: i < timerState.currentRound - 1
+                ? '#32c864'
+                : i === timerState.currentRound - 1
+                  ? 'rgba(255,255,255,0.8)'
+                  : 'rgba(255,255,255,0.2)'
+            }} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

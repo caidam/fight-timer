@@ -18,6 +18,8 @@ export const encodePresetCompact = (preset) => {
   if (preset.timingMode === 'custom') {
     s += `/i${preset.intenseMin}-${preset.intenseMax}/n${preset.normalMin}-${preset.normalMax}`;
   }
+  if (preset.warmupDuration > 0) s += `/w${preset.warmupDuration}`;
+  if (preset.cooldownDuration > 0) s += `/d${preset.cooldownDuration}`;
   return s;
 };
 
@@ -50,13 +52,17 @@ export const decodePresetCompact = (str) => {
   preset.timingMode = timingMode;
   preset.progressiveIntensity = mf.includes('prog');
   preset.hideNextSwitch = mf.includes('hide');
-  if (timingMode === 'custom') {
-    for (const p of parts.slice(4)) {
+  for (const p of parts.slice(4)) {
+    if (timingMode === 'custom') {
       const im = p.match(/^i(\d+)-(\d+)$/);
       if (im) { preset.intenseMin = parseInt(im[1]); preset.intenseMax = parseInt(im[2]); }
       const nm = p.match(/^n(\d+)-(\d+)$/);
       if (nm) { preset.normalMin = parseInt(nm[1]); preset.normalMax = parseInt(nm[2]); }
     }
+    const wm = p.match(/^w(\d+)$/);
+    if (wm) preset.warmupDuration = parseInt(wm[1]);
+    const dm = p.match(/^d(\d+)$/);
+    if (dm) preset.cooldownDuration = parseInt(dm[1]);
   }
   return preset;
 };

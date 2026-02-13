@@ -201,6 +201,23 @@ const ConfigScreen = ({
                 theme={theme}
               />
             </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
+              <TimeInput
+                value={activePreset.warmupDuration}
+                onChange={(v) => updateActivePreset({ warmupDuration: v })}
+                label={t('config.warmup')}
+                placeholder="0:00"
+                theme={theme}
+              />
+              <TimeInput
+                value={activePreset.cooldownDuration}
+                onChange={(v) => updateActivePreset({ cooldownDuration: v })}
+                label={t('config.cooldown')}
+                placeholder="0:00"
+                theme={theme}
+              />
+            </div>
           </div>
 
           {/* Timing Mode */}
@@ -400,6 +417,8 @@ const ConfigScreen = ({
             duration: formatTimeShort(config.roundDuration),
             rest: formatTimeShort(config.restDuration)
           })}
+          {config.warmupDuration > 0 && `, ${formatTimeShort(config.warmupDuration)} ${t('config.warmup').toLowerCase()}`}
+          {config.cooldownDuration > 0 && `, ${formatTimeShort(config.cooldownDuration)} ${t('config.cooldown').toLowerCase()}`}
         </p>
       </div>
     </div>
