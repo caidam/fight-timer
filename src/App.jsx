@@ -162,19 +162,27 @@ export default function App() {
     setPresets(newPresets);
   };
 
-  const presetsMatch = (a, b) =>
-    Number(a.rounds) === Number(b.rounds) &&
-    a.roundDuration === b.roundDuration &&
-    a.restDuration === b.restDuration &&
-    a.warmupDuration === b.warmupDuration &&
-    a.cooldownDuration === b.cooldownDuration &&
-    a.timingMode === b.timingMode &&
-    a.intenseMin === b.intenseMin &&
-    a.intenseMax === b.intenseMax &&
-    a.normalMin === b.normalMin &&
-    a.normalMax === b.normalMax &&
-    a.progressiveIntensity === b.progressiveIntensity &&
-    a.hideNextSwitch === b.hideNextSwitch;
+  const presetsMatch = (a, b) => {
+    const normalize = (p) => {
+      if (p.timingMode === 'custom') return p;
+      const mode = TIMING_MODES[p.timingMode];
+      const timings = mode?.getTimings(p.roundDuration);
+      return timings ? { ...p, ...timings } : p;
+    };
+    const na = normalize(a), nb = normalize(b);
+    return Number(na.rounds) === Number(nb.rounds) &&
+      na.roundDuration === nb.roundDuration &&
+      na.restDuration === nb.restDuration &&
+      na.warmupDuration === nb.warmupDuration &&
+      na.cooldownDuration === nb.cooldownDuration &&
+      na.timingMode === nb.timingMode &&
+      na.intenseMin === nb.intenseMin &&
+      na.intenseMax === nb.intenseMax &&
+      na.normalMin === nb.normalMin &&
+      na.normalMax === nb.normalMax &&
+      na.progressiveIntensity === nb.progressiveIntensity &&
+      na.hideNextSwitch === nb.hideNextSwitch;
+  };
 
   const toggleImportSelection = (id) => {
     setSelectedImportIds(prev => ({ ...prev, [id]: !prev[id] }));
@@ -189,7 +197,21 @@ export default function App() {
     } else if (action === 'add') {
       const toAdd = pendingImport.presets.filter(p => selectedImportIds[p.id]);
       if (toAdd.length > 0) {
-        setPresets(prev => [...prev, ...toAdd]);
+        setPresets(prev => {
+          const usedNames = new Set(prev.map(p => p.name));
+          const renamed = toAdd.map(p => {
+            if (!usedNames.has(p.name)) {
+              usedNames.add(p.name);
+              return p;
+            }
+            let i = 2;
+            while (usedNames.has(`${p.name} (${i})`)) i++;
+            const newName = `${p.name} (${i})`;
+            usedNames.add(newName);
+            return { ...p, name: newName };
+          });
+          return [...prev, ...renamed];
+        });
       }
     }
     setPendingImport(null);
