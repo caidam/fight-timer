@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fight-timer-v1';
+const CACHE_NAME = 'fight-timer-v2';
 
 self.addEventListener('install', () => self.skipWaiting());
 

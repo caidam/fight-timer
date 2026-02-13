@@ -585,7 +585,7 @@ export default function App() {
               padding: '24px'
             }}>
               <div style={{
-                background: theme.surface,
+                background: theme.bg,
                 border: `1px solid ${theme.border}`,
                 borderRadius: '16px',
                 padding: '24px',
