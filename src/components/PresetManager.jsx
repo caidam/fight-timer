@@ -1,15 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { THEMES } from '../constants/themes';
 import { formatTimeShort } from '../utils/time';
 import { useT } from '../i18n/I18nContext';
 
-const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onRename, theme }) => {
+const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onRename, onReorder, theme }) => {
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
   const [animatingId, setAnimatingId] = useState(null);
   const prevLength = useRef(presets.length);
   const { t } = useT();
   const th = theme || THEMES.mono.dark;
+
+  // Drag state
+  const [dragId, setDragId] = useState(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [dropping, setDropping] = useState(false);
+  const [noTransition, setNoTransition] = useState(false);
+  const dragRef = useRef(null);
+  const holdTimerRef = useRef(null);
+  const dropTimerRef = useRef(null);
+  const suppressClickRef = useRef(false);
 
   // Detect newly added preset and trigger slide-in animation
   useEffect(() => {
@@ -32,6 +42,170 @@ const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onR
       onRename(editingId, editName.trim());
     }
     setEditingId(null);
+  };
+
+  const cancelHold = useCallback(() => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  }, []);
+
+  const startDrag = useCallback((id) => {
+    setDragId(id);
+    setDragOffset(0);
+    suppressClickRef.current = true;
+  }, []);
+
+  const handlePointerDown = useCallback((e, id) => {
+    if (presets.length < 2) return;
+    if (e.target.closest('button') || e.target.closest('input')) return;
+
+    const row = e.currentTarget;
+    const rect = row.getBoundingClientRect();
+    const index = presets.findIndex(p => p.id === id);
+
+    dragRef.current = {
+      id,
+      startY: e.clientY,
+      startIndex: index,
+      itemHeight: rect.height + 8
+    };
+
+    holdTimerRef.current = setTimeout(() => {
+      holdTimerRef.current = null;
+      startDrag(id);
+    }, 200);
+  }, [presets, startDrag]);
+
+  // Document-level move/up during drag
+  useEffect(() => {
+    if (dragId === null && !holdTimerRef.current) return;
+
+    const handleMove = (e) => {
+      if (!dragRef.current) return;
+      const dy = e.clientY - dragRef.current.startY;
+
+      if (dragId === null) {
+        if (Math.abs(dy) > 8) cancelHold();
+        return;
+      }
+
+      e.preventDefault();
+      setDragOffset(dy);
+    };
+
+    const handleUp = () => {
+      cancelHold();
+      if (dragId === null || !dragRef.current) {
+        dragRef.current = null;
+        return;
+      }
+
+      const d = dragRef.current;
+      const rawIndex = d.startIndex + Math.round(dragOffset / d.itemHeight);
+      const finalIndex = Math.max(0, Math.min(presets.length - 1, rawIndex));
+
+      if (finalIndex === d.startIndex) {
+        // No movement — just clean up
+        setDragId(null);
+        setDragOffset(0);
+        dragRef.current = null;
+        setTimeout(() => { suppressClickRef.current = false; }, 50);
+        return;
+      }
+
+      // Step 1: Animate dragged item to its target slot
+      setDropping(true);
+      setDragOffset((finalIndex - d.startIndex) * d.itemHeight);
+
+      const savedPresets = [...presets];
+      const savedStartIndex = d.startIndex;
+
+      // Step 2: After snap animation, commit reorder with transitions disabled
+      dropTimerRef.current = setTimeout(() => {
+        // Kill transitions so the DOM reorder + transform clear is invisible
+        setNoTransition(true);
+
+        const newPresets = [...savedPresets];
+        const [moved] = newPresets.splice(savedStartIndex, 1);
+        newPresets.splice(finalIndex, 0, moved);
+        onReorder(newPresets);
+
+        setDragId(null);
+        setDragOffset(0);
+        setDropping(false);
+        dragRef.current = null;
+
+        // Re-enable transitions next frame
+        requestAnimationFrame(() => {
+          setNoTransition(false);
+        });
+
+        setTimeout(() => { suppressClickRef.current = false; }, 50);
+      }, 150);
+    };
+
+    document.addEventListener('pointermove', handleMove, { passive: false });
+    document.addEventListener('pointerup', handleUp);
+    document.addEventListener('pointercancel', handleUp);
+
+    return () => {
+      document.removeEventListener('pointermove', handleMove);
+      document.removeEventListener('pointerup', handleUp);
+      document.removeEventListener('pointercancel', handleUp);
+    };
+  }, [dragId, dragOffset, presets, onReorder, cancelHold]);
+
+  const handleRowClick = useCallback((e, id) => {
+    if (suppressClickRef.current) return;
+    if (e.target.closest('button') || e.target.closest('input')) return;
+    onSelect(id);
+  }, [onSelect]);
+
+  useEffect(() => {
+    const handleEarlyUp = () => {
+      if (holdTimerRef.current) {
+        cancelHold();
+        dragRef.current = null;
+      }
+    };
+    document.addEventListener('pointerup', handleEarlyUp);
+    return () => document.removeEventListener('pointerup', handleEarlyUp);
+  }, [cancelHold]);
+
+  useEffect(() => () => {
+    cancelHold();
+    if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
+  }, [cancelHold]);
+
+  // Compute visual positions during drag
+  const sourceIndex = dragRef.current?.startIndex ?? -1;
+  const targetIndex = dragId !== null && dragRef.current
+    ? Math.max(0, Math.min(presets.length - 1,
+        dragRef.current.startIndex + Math.round(dragOffset / dragRef.current.itemHeight)))
+    : -1;
+
+  const getItemTransform = (index) => {
+    if (dragId === null || !dragRef.current) return 'none';
+    if (presets[index].id === dragId) {
+      return dropping
+        ? `translateY(${dragOffset}px)`
+        : `translateY(${dragOffset}px) scale(1.02)`;
+    }
+    const ih = dragRef.current.itemHeight;
+    if (sourceIndex < targetIndex) {
+      if (index > sourceIndex && index <= targetIndex) return `translateY(${-ih}px)`;
+    } else if (sourceIndex > targetIndex) {
+      if (index >= targetIndex && index < sourceIndex) return `translateY(${ih}px)`;
+    }
+    return 'none';
+  };
+
+  const getTransition = (isDragging) => {
+    if (noTransition) return 'none';
+    if (isDragging && !dropping) return 'box-shadow 0.15s, opacity 0.15s';
+    return 'transform 0.15s ease-out, box-shadow 0.15s, opacity 0.15s';
   };
 
   return (
@@ -81,23 +255,35 @@ const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onR
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {presets.map(preset => {
+        {presets.map((preset, index) => {
           const isActive = activePresetId === preset.id;
           const isAnimating = animatingId === preset.id;
+          const isDragging = dragId === preset.id;
           return (
-          <div key={preset.id} style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '12px 14px',
-            background: isActive ? th.surfaceHover : 'transparent',
-            border: `1px solid ${isActive ? th.borderActive : th.border}`,
-            borderRadius: '10px',
-            cursor: 'pointer',
-            overflow: 'hidden',
-            transformOrigin: 'top',
-            animation: isAnimating ? 'presetSlideIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : 'none'
-          }} onClick={() => onSelect(preset.id)}>
+          <div key={preset.id} data-preset-row
+            onPointerDown={(e) => handlePointerDown(e, preset.id)}
+            onClick={(e) => handleRowClick(e, preset.id)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '12px 14px',
+              background: isActive ? th.surfaceHover : 'transparent',
+              border: `1px solid ${isActive ? th.borderActive : th.border}`,
+              borderRadius: '10px',
+              cursor: isDragging ? 'grabbing' : 'pointer',
+              overflow: 'hidden',
+              transformOrigin: 'top',
+              animation: isAnimating ? 'presetSlideIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : 'none',
+              transform: getItemTransform(index),
+              transition: getTransition(isDragging),
+              zIndex: isDragging ? 10 : 1,
+              boxShadow: isDragging && !dropping ? `0 4px 16px rgba(0,0,0,0.2)` : 'none',
+              opacity: isDragging && !dropping ? 0.92 : 1,
+              position: 'relative',
+              touchAction: 'none',
+              userSelect: 'none'
+          }}>
             <div style={{
               width: '16px',
               height: '16px',

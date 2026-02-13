@@ -28,6 +28,7 @@ const ConfigScreen = ({
   addPreset,
   deletePreset,
   renamePreset,
+  reorderPresets,
   activePreset,
   config,
   updateActivePreset,
@@ -140,6 +141,7 @@ const ConfigScreen = ({
           onAdd={addPreset}
           onDelete={deletePreset}
           onRename={renamePreset}
+          onReorder={reorderPresets}
           theme={theme}
         />
 

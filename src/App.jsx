@@ -136,6 +136,10 @@ export default function App() {
     setPresets(prev => prev.map(p => p.id === id ? { ...p, name } : p));
   };
 
+  const reorderPresets = (newPresets) => {
+    setPresets(newPresets);
+  };
+
   // Wake lock
   const requestWakeLock = async () => {
     if ('wakeLock' in navigator) {
@@ -488,6 +492,7 @@ export default function App() {
         addPreset={addPreset}
         deletePreset={deletePreset}
         renamePreset={renamePreset}
+        reorderPresets={reorderPresets}
         activePreset={activePreset}
         config={config}
         updateActivePreset={updateActivePreset}
