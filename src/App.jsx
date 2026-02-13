@@ -566,11 +566,17 @@ const HelpSection = ({ title, children, defaultOpen = false, theme: t }) => {
       <div style={{
         overflow: 'hidden',
         maxHeight: open ? '500px' : '0',
-        opacity: open ? 1 : 0,
-        transition: 'max-height 0.35s ease, opacity 0.25s ease',
-        paddingBottom: open ? '14px' : '0'
+        transition: 'max-height 0.4s ease'
       }}>
-        {children}
+        <div style={{
+          transform: open ? 'scaleY(1)' : 'scaleY(0)',
+          transformOrigin: 'top',
+          opacity: open ? 1 : 0,
+          transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease',
+          paddingBottom: '14px'
+        }}>
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -633,7 +639,7 @@ const HelpModal = ({ onClose, theme }) => {
         <HelpSection title="OPTIONS" theme={t}>
           <div style={{ display: 'grid', gap: '10px' }}>
             <div>
-              <strong style={{ color: t.accentSolid }}>Progressive Intensity</strong><br/>
+              <strong style={{ color: t.text }}>Progressive Intensity</strong><br/>
               <span style={{ color: t.textDim }}>Each round gets harder: intense periods grow +12%/round, recovery shrinks -12%/round. Simulates late-fight fatigue.</span>
             </div>
             <div>
@@ -869,6 +875,7 @@ export default function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [shareToast, setShareToast] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
+  const [startBouncing, setStartBouncing] = useState(false);
   const themePickerRef = useRef(null);
   const [hideSwitchLive, setHideSwitchLive] = useState(false);
   const [themeId, setThemeId] = useState(() => {
@@ -1139,6 +1146,14 @@ export default function App() {
     setTimeout(() => sounds.roundStart(), 100);
   };
 
+  const handleStartPress = () => {
+    setStartBouncing(true);
+    setTimeout(() => {
+      setStartBouncing(false);
+      startTraining();
+    }, 450);
+  };
+
   const togglePause = () => {
     setTimerState(prev => ({ ...prev, isRunning: !prev.isRunning }));
   };
@@ -1257,6 +1272,17 @@ export default function App() {
       border-color: ${theme.focusBorder} !important;
       box-shadow: 0 0 0 3px ${theme.focusGlow};
     }
+    @keyframes startBounce {
+      0% { transform: scale(1, 1); }
+      20% { transform: scale(0.88, 0.9); }
+      45% { transform: scale(0.88, 0.9); }
+      75% { transform: scale(1.04, 0.97); }
+      90% { transform: scale(0.98, 1.02); }
+      100% { transform: scale(1, 1); }
+    }
+    .btn-start.bouncing {
+      animation: startBounce 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
   `, [theme]);
 
   // CONFIG SCREEN
@@ -1321,8 +1347,26 @@ export default function App() {
                 {(() => {
                   const ids = Object.keys(THEMES);
                   const otherIds = ids.filter(id => id !== themeId);
+                  const expandedWidth = otherIds.length * 28 + 20 + 12;
                   return (
                     <>
+                      {/* Backdrop pill */}
+                      <div style={{
+                        position: 'absolute',
+                        right: '-6px',
+                        top: '-5px',
+                        height: '30px',
+                        width: showThemePicker ? `${expandedWidth}px` : '30px',
+                        borderRadius: '15px',
+                        background: theme.surface,
+                        border: `1px solid ${showThemePicker ? theme.border : 'transparent'}`,
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        opacity: showThemePicker ? 1 : 0,
+                        transition: 'width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease, border-color 0.2s ease',
+                        pointerEvents: 'none',
+                        zIndex: 1
+                      }} />
                       {/* Other theme circles — positioned behind trigger, fan out when open */}
                       {otherIds.map((id, i) => (
                         <button
@@ -1639,7 +1683,7 @@ export default function App() {
           </div>
 
           {/* Start Button */}
-          <button onClick={startTraining} style={{
+          <button className={`btn-start${startBouncing ? ' bouncing' : ''}`} onClick={handleStartPress} style={{
             width: '100%',
             marginTop: '24px',
             padding: '20px',
