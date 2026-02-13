@@ -959,6 +959,17 @@ export default function App() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
+  // Re-acquire wake lock when page becomes visible again (OS releases it on tab switch / notifications)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && screen === 'training' && timerState.isRunning) {
+        requestWakeLock();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [screen, timerState.isRunning]);
+
   // Theme
   const changeTheme = (id) => {
     setThemeId(id);
