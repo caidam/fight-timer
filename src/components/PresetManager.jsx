@@ -20,6 +20,11 @@ const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onR
   const holdTimerRef = useRef(null);
   const dropTimerRef = useRef(null);
   const suppressClickRef = useRef(false);
+  const listRef = useRef(null);
+  const dragIdRef = useRef(null);
+
+  // Keep dragIdRef in sync for use in non-passive touch handler
+  useEffect(() => { dragIdRef.current = dragId; }, [dragId]);
 
   // Detect newly added preset and trigger slide-in animation
   useEffect(() => {
@@ -77,6 +82,36 @@ const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onR
       startDrag(id);
     }, 200);
   }, [presets, startDrag]);
+
+  // Non-passive touchmove on the list container to selectively prevent scrolling
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+
+    const handleTouchMove = (e) => {
+      // Active drag — always prevent scrolling
+      if (dragIdRef.current !== null) {
+        e.preventDefault();
+        return;
+      }
+      // Hold detection phase — prevent scroll for small movements, allow for fast swipes
+      if (holdTimerRef.current && dragRef.current) {
+        const touch = e.touches[0];
+        const dy = Math.abs(touch.clientY - dragRef.current.startY);
+        if (dy > 8) {
+          // Fast swipe — cancel hold, let browser scroll
+          cancelHold();
+          dragRef.current = null;
+        } else {
+          // Small movement — prevent scroll to keep touch undecided
+          e.preventDefault();
+        }
+      }
+    };
+
+    list.addEventListener('touchmove', handleTouchMove, { passive: false });
+    return () => list.removeEventListener('touchmove', handleTouchMove);
+  }, [cancelHold]);
 
   // Document-level move/up during drag
   useEffect(() => {
@@ -254,7 +289,7 @@ const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onR
         }}>{t('presets.add')}</button>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {presets.map((preset, index) => {
           const isActive = activePresetId === preset.id;
           const isAnimating = animatingId === preset.id;
@@ -281,7 +316,6 @@ const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onR
               boxShadow: isDragging && !dropping ? `0 4px 16px rgba(0,0,0,0.2)` : 'none',
               opacity: isDragging && !dropping ? 0.92 : 1,
               position: 'relative',
-              touchAction: 'none',
               userSelect: 'none'
           }}>
             <div style={{

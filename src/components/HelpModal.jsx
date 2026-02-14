@@ -8,6 +8,8 @@ const HelpModal = ({ onClose, theme }) => {
   const { t } = useT();
   const th = theme || THEMES.mono.dark;
   const [visible, setVisible] = useState(false);
+  const [importUrl, setImportUrl] = useState('');
+  const [importError, setImportError] = useState(false);
 
   useEffect(() => {
     // Trigger enter animation on next frame
@@ -18,6 +20,24 @@ const HelpModal = ({ onClose, theme }) => {
     setVisible(false);
     setTimeout(onClose, 250);
   }, [onClose]);
+
+  const handleImportUrl = useCallback(() => {
+    const trimmed = importUrl.trim();
+    if (!trimmed) return;
+    try {
+      const url = new URL(trimmed);
+      const hash = url.hash.slice(1);
+      if (!hash) { setImportError(true); return; }
+      // Close modal, then set the hash — hashchange listener handles the rest
+      setVisible(false);
+      setTimeout(() => {
+        onClose();
+        window.location.hash = hash;
+      }, 250);
+    } catch {
+      setImportError(true);
+    }
+  }, [importUrl, onClose]);
 
   return (
   <div style={{
@@ -114,6 +134,52 @@ const HelpModal = ({ onClose, theme }) => {
             <div>
               <strong style={{ color: th.text }}>{t('help.multiplePresets')}</strong><br/>
               {t('help.multiplePresetsDesc')}
+            </div>
+            <div style={{ marginTop: '4px' }}>
+              <strong style={{ color: th.text }}>{t('help.importUrl')}</strong><br/>
+              <span>{t('help.importUrlDesc')}</span>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                <input
+                  type="url"
+                  value={importUrl}
+                  onChange={(e) => { setImportUrl(e.target.value); setImportError(false); }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleImportUrl()}
+                  placeholder={t('help.importUrlPlaceholder')}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    background: th.surface,
+                    border: `1px solid ${importError ? 'rgba(255,100,100,0.6)' : th.border}`,
+                    borderRadius: '6px',
+                    color: th.text,
+                    padding: '8px 10px',
+                    fontSize: '13px',
+                    fontFamily: "'Oswald', sans-serif",
+                  }}
+                />
+                <button
+                  onClick={handleImportUrl}
+                  style={{
+                    background: importUrl.trim() ? th.accentSolid : th.surface,
+                    border: `1px solid ${importUrl.trim() ? th.accentSolid : th.border}`,
+                    borderRadius: '6px',
+                    color: importUrl.trim() ? (th.bg || '#000') : th.textDim,
+                    padding: '8px 14px',
+                    fontSize: '13px',
+                    fontFamily: "'Oswald', sans-serif",
+                    fontWeight: 700,
+                    letterSpacing: '1px',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >{t('help.importUrlButton')}</button>
+              </div>
+              {importError && (
+                <div style={{ color: 'rgba(255,100,100,0.8)', fontSize: '12px', marginTop: '6px' }}>
+                  {t('help.importUrlInvalid')}
+                </div>
+              )}
             </div>
           </div>
         </HelpSection>
