@@ -285,7 +285,7 @@ const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onR
           fontWeight: 400
         }}>{t('presets.title')}</h3>
         <button onClick={onAdd} style={{
-          background: th.surfaceHover,
+          background: 'transparent',
           border: `1px solid ${th.border}`,
           borderRadius: '8px',
           color: th.textDim,

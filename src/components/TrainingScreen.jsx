@@ -43,7 +43,9 @@ const TrainingScreen = ({
   const { t } = useT();
   const currentColors = intensityColors[timerState.intensity] || intensityColors.normal;
   const switchIn = Math.max(0, timerState.timeRemaining - timerState.switchTarget);
-  const isTimerGlitched = hideTimerLive && phase === 'training' && !timerState.isResting;
+  const isTimerGlitched = hideTimerLive === 'glitch' && phase === 'training' && !timerState.isResting;
+  const isTimerBlacked = hideTimerLive === 'blackout' && phase === 'training' && !timerState.isResting;
+  const isTimerHidden = isTimerGlitched || isTimerBlacked;
 
   const [scrambled, setScrambled] = useState('0:00');
   const [scrambledGhost, setScrambledGhost] = useState('0:00');
@@ -53,7 +55,7 @@ const TrainingScreen = ({
       const d = () => Math.floor(Math.random() * 10);
       setScrambled(`${d()}:${Math.floor(Math.random() * 6)}${d()}`);
       setScrambledGhost(`${d()}:${Math.floor(Math.random() * 6)}${d()}`);
-    }, 100);
+    }, 280);
     return () => clearInterval(tick);
   }, [isTimerGlitched]);
 
@@ -84,30 +86,30 @@ const TrainingScreen = ({
         }
         @keyframes glitch {
           0%, 100% { transform: translate(0) skewX(0); }
-          8% { transform: translate(-4px, 2px) skewX(-2deg); }
-          12% { transform: translate(3px, -2px) skewX(1deg); }
+          8% { transform: translate(-2px, 1px) skewX(-0.8deg); }
+          12% { transform: translate(2px, -1px) skewX(0.5deg); }
           15% { transform: translate(0) skewX(0); }
-          28% { transform: translate(2px, 1px) skewX(-1deg); }
-          32% { transform: translate(-5px, -1px) skewX(2deg); }
+          28% { transform: translate(1px, 1px) skewX(-0.5deg); }
+          32% { transform: translate(-3px, -1px) skewX(1deg); }
           40% { transform: translate(0) skewX(0); }
-          55% { transform: translate(4px, -2px) skewX(1deg); }
-          58% { transform: translate(-2px, 2px) skewX(-1deg); }
+          55% { transform: translate(2px, -1px) skewX(0.5deg); }
+          58% { transform: translate(-1px, 1px) skewX(-0.5deg); }
           65% { transform: translate(0) skewX(0); }
-          78% { transform: translate(-3px, 1px) skewX(1deg); }
-          82% { transform: translate(3px, -1px) skewX(-1deg); }
+          78% { transform: translate(-2px, 1px) skewX(0.5deg); }
+          82% { transform: translate(2px, -1px) skewX(-0.5deg); }
           90% { transform: translate(0) skewX(0); }
         }
         @keyframes glitchGhost {
-          0%, 100% { clip-path: inset(0 0 80% 0); transform: translate(6px, 0); }
-          10% { clip-path: inset(15% 0 60% 0); transform: translate(-8px, 0); }
-          20% { clip-path: inset(70% 0 5% 0); transform: translate(10px, 0); }
-          30% { clip-path: inset(0 0 85% 0); transform: translate(-6px, 0); }
-          40% { clip-path: inset(40% 0 30% 0); transform: translate(8px, 0); }
-          50% { clip-path: inset(80% 0 0 0); transform: translate(-10px, 0); }
-          60% { clip-path: inset(10% 0 70% 0); transform: translate(6px, 0); }
-          70% { clip-path: inset(55% 0 20% 0); transform: translate(-8px, 0); }
-          80% { clip-path: inset(0 0 65% 0); transform: translate(10px, 0); }
-          90% { clip-path: inset(30% 0 45% 0); transform: translate(-6px, 0); }
+          0%, 100% { clip-path: inset(0 0 80% 0); transform: translate(4px, 0); }
+          10% { clip-path: inset(15% 0 60% 0); transform: translate(-5px, 0); }
+          20% { clip-path: inset(70% 0 5% 0); transform: translate(6px, 0); }
+          30% { clip-path: inset(0 0 85% 0); transform: translate(-4px, 0); }
+          40% { clip-path: inset(40% 0 30% 0); transform: translate(5px, 0); }
+          50% { clip-path: inset(80% 0 0 0); transform: translate(-6px, 0); }
+          60% { clip-path: inset(10% 0 70% 0); transform: translate(4px, 0); }
+          70% { clip-path: inset(55% 0 20% 0); transform: translate(-5px, 0); }
+          80% { clip-path: inset(0 0 65% 0); transform: translate(6px, 0); }
+          90% { clip-path: inset(30% 0 45% 0); transform: translate(-4px, 0); }
         }
       `}</style>
 
@@ -169,21 +171,24 @@ const TrainingScreen = ({
       )}
 
       <div
-        onClick={isTimerGlitched ? () => setHideTimerLive(false) : undefined}
-        style={{ position: 'relative', lineHeight: '1', cursor: isTimerGlitched ? 'pointer' : 'default' }}
+        onClick={isTimerHidden ? () => setHideTimerLive('visible') : undefined}
+        style={{ position: 'relative', lineHeight: '1', cursor: isTimerHidden ? 'pointer' : 'default' }}
       >
         <div style={{
           fontSize: 'clamp(90px, 28vw, 170px)',
           fontWeight: '700',
           textShadow: isTimerGlitched
-            ? `-5px 0 rgba(255,0,60,0.7), 5px 0 rgba(0,255,255,0.7), 0 0 60px ${currentColors.glow}`
-            : `0 0 60px ${currentColors.glow}, 0 0 120px ${currentColors.glow}`,
+            ? `-3px 0 rgba(255,0,60,0.7), 3px 0 rgba(0,255,255,0.7), 0 0 60px ${currentColors.glow}`
+            : isTimerBlacked
+              ? 'none'
+              : `0 0 60px ${currentColors.glow}, 0 0 120px ${currentColors.glow}`,
           animation: isTimerGlitched
-            ? 'glitch 0.4s steps(1) infinite'
+            ? 'glitch 1s steps(1) infinite'
             : timerState.isRunning ? 'pulse 1s ease infinite' : 'none',
-          lineHeight: '1'
+          lineHeight: '1',
+          color: isTimerBlacked ? 'rgba(255,255,255,0.08)' : undefined
         }}>
-          {isTimerGlitched ? scrambled : formatTime(timerState.timeRemaining)}
+          {isTimerGlitched ? scrambled : isTimerBlacked ? '--:--' : formatTime(timerState.timeRemaining)}
         </div>
         {isTimerGlitched && (
           <div aria-hidden style={{
@@ -195,8 +200,8 @@ const TrainingScreen = ({
             fontWeight: '700',
             lineHeight: '1',
             color: 'rgba(0,255,255,0.4)',
-            textShadow: `5px 0 rgba(255,0,60,0.3)`,
-            animation: 'glitchGhost 0.25s steps(1) infinite',
+            textShadow: `3px 0 rgba(255,0,60,0.3)`,
+            animation: 'glitchGhost 0.7s steps(1) infinite',
             pointerEvents: 'none'
           }}>
             {scrambledGhost}
@@ -252,7 +257,9 @@ const TrainingScreen = ({
       {!timerState.isResting && phase === 'training' && (
         <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
           <button
-            onClick={() => setHideTimerLive(prev => !prev)}
+            onClick={() => setHideTimerLive(prev =>
+              prev === 'visible' ? (config.hideTimerMode || 'blackout') : 'visible'
+            )}
             style={{
               padding: '8px 14px',
               fontSize: '12px',
@@ -265,7 +272,7 @@ const TrainingScreen = ({
               cursor: 'pointer'
             }}
           >
-            {hideTimerLive ? t('training.timerShow') : t('training.timerHide')}
+            {hideTimerLive === 'visible' ? t('training.timerHide') : t('training.timerShow')}
           </button>
           <button
             onClick={() => setHideSwitchLive(prev => !prev)}

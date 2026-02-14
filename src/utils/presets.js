@@ -14,6 +14,7 @@ export const createDefaultPreset = (name = 'Preset 1') => ({
   progressiveIntensity: false,
   hideNextSwitch: false,
   hideTimer: false,
+  hideTimerMode: 'blackout',
   warmupDuration: 0,
   cooldownDuration: 0
 });

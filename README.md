@@ -13,7 +13,7 @@ React app. No backend, no accounts — config lives in the URL for easy sharing.
 - Multiple presets with drag-to-reorder
 - Shareable presets via URL with smart import/duplicate detection
 - Session summary with intensity stats
-- Hide timer (glitch effect with censorship bar, tap or button to reveal)
+- Hide timer with two modes: Glitch (scrambled digits) or Blackout (fully hidden), tap or button to reveal
 - Hide switch countdown toggle
 - Pause/resume and fullscreen during training
 - Wake lock keeps screen on

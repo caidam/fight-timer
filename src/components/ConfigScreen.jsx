@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TIMING_MODES } from '../constants/timingModes';
 import { formatTimeShort } from '../utils/time';
 import { useT } from '../i18n/I18nContext';
@@ -48,6 +48,7 @@ const ConfigScreen = ({
   toggleInstallBanner
 }) => {
   const { t } = useT();
+  const [effectOpen, setEffectOpen] = useState(false);
 
   return (
     <div ref={containerRef} style={{
@@ -360,6 +361,67 @@ const ConfigScreen = ({
                 description={t('config.hideTimerDesc')}
                 theme={theme}
               />
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                paddingLeft: '34px',
+                marginTop: '-4px',
+                marginBottom: '6px',
+                opacity: activePreset.hideTimer ? 1 : 0.4,
+                transition: 'opacity 0.2s ease'
+              }}>
+                <span style={{
+                  fontFamily: "'Oswald', sans-serif",
+                  fontSize: '11px',
+                  color: theme.textDim,
+                  letterSpacing: '1px',
+                  flexShrink: 0
+                }}>{t('config.hideEffect')}:</span>
+                <div
+                  onClick={!effectOpen ? () => setEffectOpen(true) : undefined}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    borderRadius: '7px',
+                    border: `1px solid ${effectOpen ? theme.border : theme.borderActive}`,
+                    background: effectOpen ? 'transparent' : theme.surfaceHover,
+                    padding: '1px',
+                    cursor: effectOpen ? 'default' : 'pointer',
+                    overflow: 'hidden',
+                    transition: 'border-color 0.2s ease, background 0.2s ease'
+                  }}
+                >
+                  {['glitch', 'blackout'].map(mode => {
+                    const selected = (activePreset.hideTimerMode || 'blackout') === mode;
+                    const collapsed = !effectOpen && !selected;
+                    return (
+                      <button
+                        key={mode}
+                        onClick={effectOpen ? () => { updateActivePreset({ hideTimerMode: mode }); setEffectOpen(false); } : undefined}
+                        style={{
+                          padding: collapsed ? '4px 0' : '4px 11px',
+                          maxWidth: collapsed ? '0' : '100px',
+                          opacity: collapsed ? 0 : 1,
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          fontSize: '11px',
+                          fontFamily: "'Oswald', sans-serif",
+                          letterSpacing: '1px',
+                          background: effectOpen && selected ? theme.surfaceHover : 'transparent',
+                          border: 'none',
+                          borderRadius: '6px',
+                          color: selected ? theme.text : theme.textDim,
+                          cursor: 'pointer',
+                          transition: 'max-width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease, padding 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease'
+                        }}
+                      >
+                        {t(`config.hideMode_${mode}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <OptionToggle
                 checked={activePreset.hideNextSwitch}
                 onChange={() => updateActivePreset({ hideNextSwitch: !activePreset.hideNextSwitch })}
