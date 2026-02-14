@@ -32,13 +32,13 @@ const HelpSection = ({ title, children, defaultOpen = false, theme: th }) => {
       <div style={{
         overflow: 'hidden',
         maxHeight: open ? '500px' : '0',
-        transition: 'max-height 0.4s ease'
+        transition: 'max-height 0.5s ease'
       }}>
         <div style={{
           transform: open ? 'scaleY(1)' : 'scaleY(0)',
           transformOrigin: 'top',
           opacity: open ? 1 : 0,
-          transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease',
+          transition: 'transform 0.45s ease, opacity 0.35s ease',
           paddingBottom: '14px'
         }}>
           {children}

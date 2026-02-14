@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { THEMES } from '../constants/themes';
 import { TIMING_MODES } from '../constants/timingModes';
 import { useT } from '../i18n/I18nContext';
@@ -7,6 +7,18 @@ import HelpSection from './HelpSection';
 const HelpModal = ({ onClose, theme }) => {
   const { t } = useT();
   const th = theme || THEMES.mono.dark;
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    // Trigger enter animation on next frame
+    requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setVisible(false);
+    setTimeout(onClose, 250);
+  }, [onClose]);
+
   return (
   <div style={{
     position: 'fixed',
@@ -17,8 +29,10 @@ const HelpModal = ({ onClose, theme }) => {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '20px',
-    overflowY: 'auto'
-  }} onClick={onClose}>
+    overflowY: 'auto',
+    opacity: visible ? 1 : 0,
+    transition: 'opacity 0.25s ease'
+  }} onClick={handleClose}>
     <div style={{
       background: th.modalBg,
       borderRadius: '16px',
@@ -27,11 +41,16 @@ const HelpModal = ({ onClose, theme }) => {
       width: '100%',
       maxHeight: '85vh',
       overflowY: 'auto',
-      border: `1px solid ${th.border}`
+      border: `1px solid ${th.border}`,
+      transform: visible ? 'scale(1)' : 'scale(0.85)',
+      opacity: visible ? 1 : 0,
+      transition: visible
+        ? 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease'
+        : 'transform 0.2s ease-out, opacity 0.15s ease'
     }} onClick={e => e.stopPropagation()}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <h2 style={{ margin: 0, fontSize: '26px', letterSpacing: '2px', color: th.accentSolid }}>{t('help.title')}</h2>
-        <button onClick={onClose} style={{
+        <button onClick={handleClose} style={{
           background: 'none',
           border: 'none',
           color: th.textDim,

@@ -40,7 +40,12 @@ const ConfigScreen = ({
   setShowLangPicker,
   langPickerRef,
   copyUrl,
-  globalStyles
+  globalStyles,
+  deferredInstallPrompt,
+  isStandalone,
+  installBannerFolded,
+  handleInstallClick,
+  toggleInstallBanner
 }) => {
   const { t } = useT();
 
@@ -98,7 +103,7 @@ const ConfigScreen = ({
               margin: '6px 0 0 0'
             }}>{t('config.subtitle')}</p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
             <ThemePicker
               themeId={themeId}
               showThemePicker={showThemePicker}
@@ -109,24 +114,28 @@ const ConfigScreen = ({
               themeMode={themeMode}
               toggleMode={toggleMode}
             />
-            <LanguagePicker
-              theme={theme}
-              showLangPicker={showLangPicker}
-              setShowLangPicker={setShowLangPicker}
-              langPickerRef={langPickerRef}
-            />
+            <div style={{ marginLeft: '16px' }}>
+              <LanguagePicker
+                theme={theme}
+                showLangPicker={showLangPicker}
+                setShowLangPicker={setShowLangPicker}
+                langPickerRef={langPickerRef}
+              />
+            </div>
             <button onClick={() => setShowHelp(true)} style={{
-              background: theme.surface,
+              marginLeft: '11px',
+              background: theme.bg,
               border: '1.5px solid rgba(128,128,128,0.25)',
               borderRadius: '50%',
-              width: '24px',
-              height: '24px',
+              width: '28px',
+              height: '28px',
               color: theme.textDim,
               fontSize: '11px',
               cursor: 'pointer',
               fontFamily: "'Oswald', sans-serif",
               fontWeight: 700,
               padding: 0,
+              flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -423,6 +432,122 @@ const ConfigScreen = ({
           {config.warmupDuration > 0 && `, ${formatTimeShort(config.warmupDuration)} ${t('config.warmup').toLowerCase()}`}
           {config.cooldownDuration > 0 && `, ${formatTimeShort(config.cooldownDuration)} ${t('config.cooldown').toLowerCase()}`}
         </p>
+
+        {!isStandalone && (
+          <div style={{
+            marginTop: '12px',
+            position: 'relative'
+          }}>
+            {/* Card — always in flow for fixed height, morphs visually */}
+            <div style={{
+              background: theme.surface,
+              border: `1px solid ${theme.border}`,
+              borderRadius: '12px',
+              padding: '16px 36px 16px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              position: 'relative',
+              transform: installBannerFolded ? 'scale(0.82)' : 'scale(1)',
+              opacity: installBannerFolded ? 0 : 1,
+              transition: installBannerFolded
+                ? 'transform 0.3s ease-out, opacity 0.2s ease'
+                : 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s, opacity 0.25s ease 0.1s',
+              transformOrigin: 'center center',
+              pointerEvents: installBannerFolded ? 'none' : 'auto'
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={theme.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  color: theme.text,
+                  fontSize: '14px',
+                  fontFamily: "'Oswald', sans-serif",
+                  fontWeight: 700,
+                  marginBottom: '2px'
+                }}>{t('install.bannerTitle')}</div>
+                <div style={{
+                  color: theme.textDim,
+                  fontSize: '12px',
+                  fontFamily: "'Oswald', sans-serif",
+                  lineHeight: 1.4
+                }}>{t('install.bannerDesc')}</div>
+              </div>
+              <button
+                onClick={deferredInstallPrompt ? handleInstallClick : () => setShowHelp(true)}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '12px',
+                  fontFamily: "'Oswald', sans-serif",
+                  letterSpacing: '1px',
+                  fontWeight: 700,
+                  background: theme.accentSolid,
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: theme.bg,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+              >
+                {deferredInstallPrompt ? t('install.installButton') : t('install.howTo')}
+              </button>
+              <button
+                onClick={toggleInstallBanner}
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  background: 'none',
+                  border: 'none',
+                  color: theme.textDim,
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  padding: '4px',
+                  lineHeight: 1
+                }}
+              >{'\u00D7'}</button>
+            </div>
+            {/* Folded: centered icon button — overlays the invisible card space */}
+            <div
+              onClick={installBannerFolded ? toggleInstallBanner : undefined}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: installBannerFolded ? 1 : 0,
+                transform: installBannerFolded ? 'scale(1)' : 'scale(0.5)',
+                transition: installBannerFolded
+                  ? 'opacity 0.2s ease 0.12s, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s'
+                  : 'opacity 0.15s ease, transform 0.25s ease-out',
+                pointerEvents: installBannerFolded ? 'auto' : 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '18px',
+                background: theme.surface,
+                border: `1px solid ${theme.border}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={theme.textDim} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

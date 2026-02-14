@@ -101,6 +101,12 @@ export default {
   'import.existing': 'D\u00E9j\u00E0 existant',
   'import.allExist': 'Tous les pr\u00E9r\u00E9glages existent d\u00E9j\u00E0.',
 
+  // Install banner
+  'install.bannerTitle': 'Installer Fight Timer',
+  'install.bannerDesc': 'Plein écran hors ligne depuis votre écran d\u2019accueil.',
+  'install.installButton': 'INSTALLER',
+  'install.howTo': 'AIDE',
+
   // Share
   'share.title': 'Fight Timer',
   'share.text': 'D\u00E9couvre mon pr\u00E9r\u00E9glage d\u2019entra\u00EEnement : {name}',

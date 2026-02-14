@@ -101,6 +101,12 @@ export default {
   'import.existing': 'Already exists',
   'import.allExist': 'All shared presets already exist in your collection.',
 
+  // Install banner
+  'install.bannerTitle': 'Install Fight Timer',
+  'install.bannerDesc': 'Add to your home screen for full-screen offline use.',
+  'install.installButton': 'INSTALL',
+  'install.howTo': 'HOW TO',
+
   // Share
   'share.title': 'Fight Timer',
   'share.text': 'Check out my training preset: {name}',

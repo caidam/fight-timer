@@ -26,6 +26,11 @@ export default function App() {
   const themePickerRef = useRef(null);
   const langPickerRef = useRef(null);
   const [hideSwitchLive, setHideSwitchLive] = useState(false);
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [installBannerFolded, setInstallBannerFolded] = useState(() => {
+    return localStorage.getItem('fight-timer-install-folded') === 'true';
+  });
   const [themeId, setThemeId] = useState(() => {
     const stored = localStorage.getItem('fight-timer-theme');
     return (stored && THEMES[stored]) ? stored : 'gold';
@@ -55,42 +60,56 @@ export default function App() {
   const activePreset = presets.find(p => p.id === activePresetId) || presets[0];
   const config = useMemo(() => applyTimingMode(activePreset), [presets, activePresetId]);
 
+  // Process URL hash: show import dialog if foreign, or load directly if no saved presets
+  const processHash = useCallback((hash, existingPresets) => {
+    const decoded = decodeStateCompact(hash);
+    if (!decoded || !decoded.presets || decoded.presets.length === 0) return null;
+
+    if (existingPresets && existingPresets.length > 0) {
+      const hasForeign = decoded.presets.some(sp =>
+        !existingPresets.some(ep => presetsMatch(sp, ep))
+      );
+      if (!hasForeign) return null;
+
+      const sel = {};
+      decoded.presets.forEach(sp => {
+        if (!existingPresets.some(ep => presetsMatch(sp, ep))) {
+          sel[sp.id] = true;
+        }
+      });
+      setSelectedImportIds(sel);
+      setPendingImport(decoded);
+      return 'import';
+    }
+
+    // No existing presets — load directly
+    setPresets(decoded.presets);
+    setActivePresetId(decoded.activePresetId || decoded.presets[0].id);
+    return 'loaded';
+  }, []);
+
   // Load state from URL on mount, fall back to localStorage (for PWA launches)
   useEffect(() => {
     const hash = window.location.hash.slice(1);
     if (hash) {
-      const decoded = decodeStateCompact(hash);
-      if (decoded && decoded.presets && decoded.presets.length > 0) {
-        // Check if user has existing saved presets
-        let hasSaved = false;
-        try {
-          const saved = localStorage.getItem('fight-timer-presets');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed.presets) && parsed.presets.length > 0) {
-              hasSaved = true;
-              // Load user's saved presets first
-              setPresets(parsed.presets);
-              setActivePresetId(parsed.activePresetId || parsed.presets[0].id);
-              // Pre-select non-duplicate shared presets
-              const sel = {};
-              decoded.presets.forEach(sp => {
-                if (!parsed.presets.some(ep => presetsMatch(sp, ep))) {
-                  sel[sp.id] = true;
-                }
-              });
-              setSelectedImportIds(sel);
-              setPendingImport(decoded);
-            }
+      let savedData = null;
+      try {
+        const saved = localStorage.getItem('fight-timer-presets');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.presets) && parsed.presets.length > 0) {
+            savedData = parsed;
           }
-        } catch {}
-        if (!hasSaved) {
-          // No saved presets — load from URL directly (first visit or fresh install)
-          setPresets(decoded.presets);
-          setActivePresetId(decoded.activePresetId || decoded.presets[0].id);
         }
-        return;
+      } catch {}
+
+      if (savedData) {
+        setPresets(savedData.presets);
+        setActivePresetId(savedData.activePresetId || savedData.presets[0].id);
       }
+
+      const result = processHash(hash, savedData?.presets);
+      if (result || savedData) return;
     }
     // No URL hash — try localStorage (PWA / direct visit)
     try {
@@ -106,6 +125,18 @@ export default function App() {
     } catch {}
     setActivePresetId(presets[0].id);
   }, []);
+
+  // Listen for hash changes to detect shared URLs opened in the same tab
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (pendingImport) return;
+      const hash = window.location.hash.slice(1);
+      if (!hash) return;
+      processHash(hash, presets);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [presets, pendingImport, processHash]);
 
   // Update URL and localStorage when presets or theme change
   useEffect(() => {
@@ -188,12 +219,23 @@ export default function App() {
     setSelectedImportIds(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const restoreUserHash = () => {
+    const encoded = encodeStateCompact(presets, activePresetId);
+    window.history.replaceState(null, '', `#${encoded}@${themeId}.${themeMode}`);
+  };
+
   const handleImport = (action) => {
     if (!pendingImport) return;
     if (action === 'replace') {
       const imported = pendingImport.presets;
       setPresets(imported);
       setActivePresetId(imported[0].id);
+      if (pendingImport.themeInfo) {
+        setThemeId(pendingImport.themeInfo.themeId);
+        setThemeMode(pendingImport.themeInfo.themeMode);
+        localStorage.setItem('fight-timer-theme', pendingImport.themeInfo.themeId);
+        localStorage.setItem('fight-timer-mode', pendingImport.themeInfo.themeMode);
+      }
     } else if (action === 'add') {
       const toAdd = pendingImport.presets.filter(p => selectedImportIds[p.id]);
       if (toAdd.length > 0) {
@@ -212,11 +254,15 @@ export default function App() {
           });
           return [...prev, ...renamed];
         });
+      } else {
+        restoreUserHash();
       }
+    } else {
+      // ignore
+      restoreUserHash();
     }
     setPendingImport(null);
     setSelectedImportIds({});
-    window.history.replaceState(null, '', window.location.pathname);
   };
 
   // Wake lock
@@ -286,11 +332,55 @@ export default function App() {
     localStorage.setItem('fight-timer-mode', next);
   };
 
+  const handleInstallClick = async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredInstallPrompt(null);
+    }
+  };
+
+  const toggleInstallBanner = () => {
+    setInstallBannerFolded(prev => {
+      const next = !prev;
+      localStorage.setItem('fight-timer-install-folded', String(next));
+      return next;
+    });
+  };
+
   useEffect(() => {
     document.documentElement.style.backgroundColor = theme.bg;
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', theme.bg);
   }, [theme]);
+
+  // PWA install prompt detection
+  useEffect(() => {
+    const standaloneQuery = window.matchMedia('(display-mode: standalone)');
+    setIsStandalone(standaloneQuery.matches || navigator.standalone === true);
+
+    const handleDisplayChange = (e) => setIsStandalone(e.matches);
+    standaloneQuery.addEventListener('change', handleDisplayChange);
+
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setDeferredInstallPrompt(e);
+    };
+    const handleAppInstalled = () => {
+      setDeferredInstallPrompt(null);
+      setIsStandalone(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      standaloneQuery.removeEventListener('change', handleDisplayChange);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
 
   // Close theme picker on outside click
   useEffect(() => {
@@ -534,7 +624,6 @@ export default function App() {
   }, [timerState.isRunning, screen, config, calculatePeriodDuration]);
 
   const globalStyles = useMemo(() => `
-    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;700&display=swap');
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
       touch-action: manipulation;
@@ -585,6 +674,11 @@ export default function App() {
           langPickerRef={langPickerRef}
           copyUrl={copyUrl}
           globalStyles={globalStyles}
+          deferredInstallPrompt={deferredInstallPrompt}
+          isStandalone={isStandalone}
+          installBannerFolded={installBannerFolded}
+          handleInstallClick={handleInstallClick}
+          toggleInstallBanner={toggleInstallBanner}
         />
         {pendingImport && (() => {
           const dupIds = new Set(

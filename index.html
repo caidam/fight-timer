@@ -10,6 +10,9 @@
     <link rel="icon" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body, #root {
@@ -17,10 +20,57 @@
         background: #323437;
         overflow-x: hidden;
       }
+      /* App hidden until fonts + React are ready */
+      #root { opacity: 0; transition: opacity 0.2s ease; }
+      #root.ready { opacity: 1; }
+      /* Splash screen */
+      #splash {
+        position: fixed;
+        inset: 0;
+        background: #323437;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+      #splash.hide { opacity: 0; pointer-events: none; }
+      #splash .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #e2b714;
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 0.3; transform: scale(0.85); }
+        50% { opacity: 1; transform: scale(1); }
+      }
     </style>
   </head>
   <body>
+    <div id="splash"><div class="dot"></div></div>
     <div id="root"></div>
+    <script>
+      // Show app and hide splash once fonts are loaded
+      document.fonts.ready.then(function() {
+        var root = document.getElementById('root');
+        var splash = document.getElementById('splash');
+        root.classList.add('ready');
+        splash.classList.add('hide');
+        setTimeout(function() { splash.remove(); }, 350);
+      });
+      // Fallback: show after 1.5s even if fonts fail
+      setTimeout(function() {
+        var root = document.getElementById('root');
+        var splash = document.getElementById('splash');
+        if (!root.classList.contains('ready')) {
+          root.classList.add('ready');
+          splash.classList.add('hide');
+          setTimeout(function() { splash.remove(); }, 350);
+        }
+      }, 1500);
+    </script>
     <script type="module" src="/src/main.jsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
