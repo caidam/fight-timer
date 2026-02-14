@@ -13,6 +13,7 @@ export const createDefaultPreset = (name = 'Preset 1') => ({
   normalMax: 35,
   progressiveIntensity: false,
   hideNextSwitch: false,
+  hideTimer: false,
   warmupDuration: 0,
   cooldownDuration: 0
 });

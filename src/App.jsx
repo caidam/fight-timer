@@ -26,6 +26,7 @@ export default function App() {
   const themePickerRef = useRef(null);
   const langPickerRef = useRef(null);
   const [hideSwitchLive, setHideSwitchLive] = useState(false);
+  const [hideTimerLive, setHideTimerLive] = useState(false);
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [installBannerFolded, setInstallBannerFolded] = useState(() => {
@@ -212,7 +213,8 @@ export default function App() {
       na.normalMin === nb.normalMin &&
       na.normalMax === nb.normalMax &&
       na.progressiveIntensity === nb.progressiveIntensity &&
-      na.hideNextSwitch === nb.hideNextSwitch;
+      na.hideNextSwitch === nb.hideNextSwitch &&
+      na.hideTimer === nb.hideTimer;
   };
 
   const toggleImportSelection = (id) => {
@@ -491,6 +493,7 @@ export default function App() {
     }
     setScreen('training');
     setHideSwitchLive(config.hideNextSwitch);
+    setHideTimerLive(config.hideTimer);
   };
 
   const togglePause = () => {
@@ -857,6 +860,8 @@ export default function App() {
       isFullscreen={isFullscreen}
       hideSwitchLive={hideSwitchLive}
       setHideSwitchLive={setHideSwitchLive}
+      hideTimerLive={hideTimerLive}
+      setHideTimerLive={setHideTimerLive}
       toggleFullscreen={toggleFullscreen}
       togglePause={togglePause}
       stopTraining={stopTraining}

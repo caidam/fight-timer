@@ -13,7 +13,8 @@ React app. No backend, no accounts — config lives in the URL for easy sharing.
 - Multiple presets with drag-to-reorder
 - Shareable presets via URL with smart import/duplicate detection
 - Session summary with intensity stats
-- Hide countdown toggle
+- Hide timer (glitch effect with censorship bar, tap or button to reveal)
+- Hide switch countdown toggle
 - Pause/resume and fullscreen during training
 - Wake lock keeps screen on
 - 4 color themes with light/dark variants

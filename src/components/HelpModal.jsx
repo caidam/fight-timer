@@ -104,8 +104,12 @@ const HelpModal = ({ onClose, theme }) => {
               <span style={{ color: th.textDim }}>{t('help.progressiveDesc')}</span>
             </div>
             <div>
-              <strong style={{ color: th.text }}>{t('help.hideCountdown')}</strong><br/>
-              <span style={{ color: th.textDim }}>{t('help.hideCountdownDesc')}</span>
+              <strong style={{ color: th.text }}>{t('help.hideTimer')}</strong><br/>
+              <span style={{ color: th.textDim }}>{t('help.hideTimerDesc')}</span>
+            </div>
+            <div>
+              <strong style={{ color: th.text }}>{t('help.hideSwitch')}</strong><br/>
+              <span style={{ color: th.textDim }}>{t('help.hideSwitchDesc')}</span>
             </div>
             <div>
               <strong style={{ color: th.text }}>{t('help.warmupCooldown')}</strong><br/>

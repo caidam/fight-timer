@@ -14,6 +14,7 @@ export const encodePresetCompact = (preset) => {
   const flags = [];
   if (preset.progressiveIntensity) flags.push('prog');
   if (preset.hideNextSwitch) flags.push('hide');
+  if (preset.hideTimer) flags.push('htimer');
   if (flags.length) s += '+' + flags.join('+');
   if (preset.timingMode === 'custom') {
     s += `/i${preset.intenseMin}-${preset.intenseMax}/n${preset.normalMin}-${preset.normalMax}`;
@@ -52,6 +53,7 @@ export const decodePresetCompact = (str) => {
   preset.timingMode = timingMode;
   preset.progressiveIntensity = mf.includes('prog');
   preset.hideNextSwitch = mf.includes('hide');
+  preset.hideTimer = mf.includes('htimer');
   for (const p of parts.slice(4)) {
     if (timingMode === 'custom') {
       const im = p.match(/^i(\d+)-(\d+)$/);

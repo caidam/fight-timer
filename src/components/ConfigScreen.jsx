@@ -354,10 +354,17 @@ const ConfigScreen = ({
                 theme={theme}
               />
               <OptionToggle
+                checked={activePreset.hideTimer}
+                onChange={() => updateActivePreset({ hideTimer: !activePreset.hideTimer })}
+                label={t('config.hideTimer')}
+                description={t('config.hideTimerDesc')}
+                theme={theme}
+              />
+              <OptionToggle
                 checked={activePreset.hideNextSwitch}
                 onChange={() => updateActivePreset({ hideNextSwitch: !activePreset.hideNextSwitch })}
-                label={t('config.hideCountdown')}
-                description={t('config.hideCountdownDesc')}
+                label={t('config.hideSwitch')}
+                description={t('config.hideSwitchDesc')}
                 theme={theme}
               />
             </div>
