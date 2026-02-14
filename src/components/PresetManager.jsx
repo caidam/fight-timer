@@ -7,7 +7,9 @@ const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onR
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
   const [animatingId, setAnimatingId] = useState(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
   const prevLength = useRef(presets.length);
+  const confirmTimerRef = useRef(null);
   const { t } = useT();
   const th = theme || THEMES.mono.dark;
 
@@ -212,6 +214,7 @@ const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onR
   useEffect(() => () => {
     cancelHold();
     if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
   }, [cancelHold]);
 
   // Compute visual positions during drag
@@ -255,6 +258,11 @@ const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onR
         @keyframes presetGlow {
           0%, 100% { box-shadow: 0 0 4px 0 ${th.accentSolid}66; }
           50% { box-shadow: 0 0 10px 3px ${th.accentSolid}44; }
+        }
+        @keyframes deleteCircleExpand {
+          0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+          80% { opacity: 0.6; }
+          100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
         }
         @keyframes presetSlideIn {
           0% { max-height: 0; opacity: 0; transform: translateY(-16px) scaleY(0.6); }
@@ -376,16 +384,58 @@ const PresetManager = ({ presets, activePresetId, onSelect, onAdd, onDelete, onR
               fontSize: '14px'
             }}>{'\u270E'}</button>
 
-            {presets.length > 1 && (
-              <button onClick={(e) => { e.stopPropagation(); onDelete(preset.id); }} style={{
+            {presets.length > 1 && (() => {
+              const isConfirming = confirmingDeleteId === preset.id;
+              return (
+              <button onClick={(e) => {
+                e.stopPropagation();
+                if (isConfirming) {
+                  if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+                  confirmTimerRef.current = null;
+                  setConfirmingDeleteId(null);
+                  onDelete(preset.id);
+                } else {
+                  setConfirmingDeleteId(preset.id);
+                  if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+                  confirmTimerRef.current = setTimeout(() => {
+                    setConfirmingDeleteId(null);
+                    confirmTimerRef.current = null;
+                  }, 3000);
+                }
+              }} style={{
+                position: 'relative',
+                overflow: 'hidden',
                 background: 'none',
                 border: 'none',
-                color: 'rgba(255,100,100,0.6)',
+                color: isConfirming ? 'rgba(255,80,80,0.9)' : 'rgba(255,100,100,0.6)',
                 cursor: 'pointer',
                 padding: '4px',
-                fontSize: '14px'
-              }}>{'\u2715'}</button>
-            )}
+                fontSize: '14px',
+                borderRadius: '50%',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'color 0.2s ease'
+              }}>
+                {isConfirming && <span style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  background: 'rgba(255,80,80,0.35)',
+                  boxShadow: '0 0 6px rgba(255,80,80,0.3)',
+                  animation: 'deleteCircleExpand 3s ease-out forwards',
+                  pointerEvents: 'none'
+                }} />}
+                {'\u2715'}
+              </button>
+              );
+            })()}
           </div>
           );
         })}
