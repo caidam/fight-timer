@@ -1,9 +1,11 @@
 import { TIMING_MODES } from '../constants/timingModes';
 
 const getUserAudioDefault = () => {
-  if (typeof localStorage === 'undefined') return 'voice';
+  if (typeof localStorage === 'undefined') return { audioEnabled: true, audioMode: 'voice' };
   const v = localStorage.getItem('fight-timer-audio');
-  return (v === 'voice' || v === 'bells' || v === 'off') ? v : 'voice';
+  if (v === 'bells') return { audioEnabled: true, audioMode: 'bells' };
+  if (v === 'off') return { audioEnabled: false, audioMode: 'voice' };
+  return { audioEnabled: true, audioMode: 'voice' };
 };
 
 export const createDefaultPreset = (name = 'Preset 1') => ({
@@ -18,12 +20,13 @@ export const createDefaultPreset = (name = 'Preset 1') => ({
   normalMin: 20,
   normalMax: 35,
   progressiveIntensity: false,
+  progressiveStrength: 12,
   hideNextSwitch: false,
   hideTimer: false,
   hideTimerMode: 'blackout',
   warmupDuration: 0,
   cooldownDuration: 0,
-  audioMode: getUserAudioDefault()
+  ...getUserAudioDefault()
 });
 
 export const applyTimingMode = (preset) => {
@@ -46,8 +49,8 @@ export const getProgressiveTimings = (config, currentRound) => {
     };
   }
 
-  // Each round: intense +12%, normal -12%
-  const roundFactor = (currentRound - 1) * 0.12;
+  const strength = (config.progressiveStrength || 12) / 100;
+  const roundFactor = (currentRound - 1) * strength;
 
   return {
     intenseMin: Math.round(config.intenseMin * (1 + roundFactor)),

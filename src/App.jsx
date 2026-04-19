@@ -62,18 +62,27 @@ export default function App() {
   const activePreset = presets.find(p => p.id === activePresetId) || presets[0];
   const config = useMemo(() => applyTimingMode(activePreset), [presets, activePresetId]);
 
+  // Resolve the effective audio mode for the engine — 'off' when disabled.
+  const resolveAudio = (p) =>
+    p?.audioEnabled === false ? 'off' : (p?.audioMode || 'voice');
+
   // Keep audio engine in sync with active preset on the config screen.
   // During training, audioModeLive takes over.
   useEffect(() => {
-    if (screen === 'config') setAudioMode(activePreset?.audioMode || 'voice');
-  }, [screen, activePreset?.audioMode]);
+    if (screen === 'config') setAudioMode(resolveAudio(activePreset));
+  }, [screen, activePreset?.audioEnabled, activePreset?.audioMode]);
 
-  // Changing the active preset's audio mode also updates the "default for new
-  // presets" localStorage hint, so creating a new preset inherits the user's
-  // most recent preference.
-  const setActivePresetAudio = (mode) => {
-    updateActivePreset({ audioMode: mode });
-    try { localStorage.setItem('fight-timer-audio', mode); } catch {}
+  // Update preset audio state. Also updates the "default for new presets"
+  // localStorage hint so new presets inherit the current preference.
+  const setPresetAudio = (updates) => {
+    updateActivePreset(updates);
+    const merged = {
+      audioEnabled: activePreset?.audioEnabled !== false,
+      audioMode: activePreset?.audioMode || 'voice',
+      ...updates
+    };
+    const hint = !merged.audioEnabled ? 'off' : merged.audioMode;
+    try { localStorage.setItem('fight-timer-audio', hint); } catch {}
   };
 
   // In-session setter — mutates the live mode only, never the preset.
@@ -112,8 +121,23 @@ export default function App() {
 
   // Load state from URL on mount, fall back to localStorage (for PWA launches)
   useEffect(() => {
-    // Legacy presets pre-dating audioMode default to 'voice'
-    const migrate = (p) => p.audioMode ? p : { ...p, audioMode: 'voice' };
+    // Migrate legacy preset shapes:
+    //   - missing audioMode → 'voice'
+    //   - legacy audioMode === 'off' → audioEnabled: false, audioMode: 'voice'
+    //   - missing audioEnabled → true
+    //   - missing progressiveStrength → 12
+    const migrate = (p) => {
+      const next = { ...p };
+      if (next.audioMode === 'off') {
+        next.audioEnabled = false;
+        next.audioMode = 'voice';
+      } else {
+        if (next.audioEnabled === undefined) next.audioEnabled = true;
+        if (!next.audioMode) next.audioMode = 'voice';
+      }
+      if (next.progressiveStrength === undefined) next.progressiveStrength = 12;
+      return next;
+    };
     const migrateAll = (list) => list.map(migrate);
 
     const hash = window.location.hash.slice(1);
@@ -241,7 +265,9 @@ export default function App() {
       na.hideNextSwitch === nb.hideNextSwitch &&
       na.hideTimer === nb.hideTimer &&
       (na.hideTimerMode || 'glitch') === (nb.hideTimerMode || 'glitch') &&
-      (na.audioMode || 'voice') === (nb.audioMode || 'voice');
+      (na.audioEnabled !== false) === (nb.audioEnabled !== false) &&
+      (na.audioMode || 'voice') === (nb.audioMode || 'voice') &&
+      (Number(na.progressiveStrength) || 12) === (Number(nb.progressiveStrength) || 12);
   };
 
   const toggleImportSelection = (id) => {
@@ -518,7 +544,7 @@ export default function App() {
     setScreen('training');
     setHideSwitchLive(config.hideNextSwitch);
     setHideTimerLive(config.hideTimer ? (config.hideTimerMode || 'blackout') : 'visible');
-    const presetAudio = activePreset?.audioMode || 'voice';
+    const presetAudio = resolveAudio(activePreset);
     setAudioModeLive(presetAudio);
     setAudioMode(presetAudio);
   };
@@ -702,8 +728,9 @@ export default function App() {
           showLangPicker={showLangPicker}
           setShowLangPicker={setShowLangPicker}
           langPickerRef={langPickerRef}
+          audioEnabled={activePreset?.audioEnabled !== false}
           audioMode={activePreset?.audioMode || 'voice'}
-          setAudioMode={setActivePresetAudio}
+          setPresetAudio={setPresetAudio}
           copyUrl={copyUrl}
           globalStyles={globalStyles}
           deferredInstallPrompt={deferredInstallPrompt}

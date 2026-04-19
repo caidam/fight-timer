@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { TIMING_MODES } from '../constants/timingModes';
 import { formatTimeShort } from '../utils/time';
 import { useT } from '../i18n/I18nContext';
@@ -7,7 +7,32 @@ import LanguagePicker from './LanguagePicker';
 import PresetManager from './PresetManager';
 import TimeInput from './TimeInput';
 import OptionToggle from './OptionToggle';
+import InlinePillPicker from './InlinePillPicker';
 import HelpModal from './HelpModal';
+
+// Wraps a sub-option row (indented label + picker) under a parent toggle.
+// Dims when disabled.
+const SubPickerRow = ({ label, theme, enabled, children }) => (
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    paddingLeft: '34px',
+    marginTop: '-4px',
+    marginBottom: '6px',
+    opacity: enabled ? 1 : 0.4,
+    transition: 'opacity 0.2s ease'
+  }}>
+    <span style={{
+      fontFamily: "'Oswald', sans-serif",
+      fontSize: '11px',
+      color: theme.textDim,
+      letterSpacing: '1px',
+      flexShrink: 0
+    }}>{label}:</span>
+    {children}
+  </div>
+);
 
 const ConfigScreen = ({
   containerRef,
@@ -39,8 +64,9 @@ const ConfigScreen = ({
   showLangPicker,
   setShowLangPicker,
   langPickerRef,
+  audioEnabled,
   audioMode,
-  setAudioMode,
+  setPresetAudio,
   copyUrl,
   globalStyles,
   deferredInstallPrompt,
@@ -50,8 +76,6 @@ const ConfigScreen = ({
   toggleInstallBanner
 }) => {
   const { t } = useT();
-  const [effectOpen, setEffectOpen] = useState(false);
-  const [audioOpen, setAudioOpen] = useState(false);
 
   return (
     <div ref={containerRef} style={{
@@ -357,6 +381,20 @@ const ConfigScreen = ({
                 description={t('config.progressiveDesc')}
                 theme={theme}
               />
+              <SubPickerRow
+                label={t('config.strength')}
+                theme={theme}
+                enabled={activePreset.progressiveIntensity}
+              >
+                <InlinePillPicker
+                  value={activePreset.progressiveStrength || 12}
+                  options={[8, 12, 16]}
+                  onChange={(v) => updateActivePreset({ progressiveStrength: v })}
+                  getLabel={(v) => `+${v}%`}
+                  theme={theme}
+                  disabled={!activePreset.progressiveIntensity}
+                />
+              </SubPickerRow>
               <OptionToggle
                 checked={activePreset.hideTimer}
                 onChange={() => updateActivePreset({ hideTimer: !activePreset.hideTimer })}
@@ -364,67 +402,20 @@ const ConfigScreen = ({
                 description={t('config.hideTimerDesc')}
                 theme={theme}
               />
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                paddingLeft: '34px',
-                marginTop: '-4px',
-                marginBottom: '6px',
-                opacity: activePreset.hideTimer ? 1 : 0.4,
-                transition: 'opacity 0.2s ease'
-              }}>
-                <span style={{
-                  fontFamily: "'Oswald', sans-serif",
-                  fontSize: '11px',
-                  color: theme.textDim,
-                  letterSpacing: '1px',
-                  flexShrink: 0
-                }}>{t('config.hideEffect')}:</span>
-                <div
-                  onClick={!effectOpen ? () => setEffectOpen(true) : undefined}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    borderRadius: '7px',
-                    border: `1px solid ${effectOpen ? theme.border : theme.borderActive}`,
-                    background: effectOpen ? 'transparent' : theme.surfaceHover,
-                    padding: '1px',
-                    cursor: effectOpen ? 'default' : 'pointer',
-                    overflow: 'hidden',
-                    transition: 'border-color 0.2s ease, background 0.2s ease'
-                  }}
-                >
-                  {['glitch', 'blackout'].map(mode => {
-                    const selected = (activePreset.hideTimerMode || 'blackout') === mode;
-                    const collapsed = !effectOpen && !selected;
-                    return (
-                      <button
-                        key={mode}
-                        onClick={effectOpen ? () => { updateActivePreset({ hideTimerMode: mode }); setEffectOpen(false); } : undefined}
-                        style={{
-                          padding: collapsed ? '4px 0' : '4px 11px',
-                          maxWidth: collapsed ? '0' : '100px',
-                          opacity: collapsed ? 0 : 1,
-                          overflow: 'hidden',
-                          whiteSpace: 'nowrap',
-                          fontSize: '11px',
-                          fontFamily: "'Oswald', sans-serif",
-                          letterSpacing: '1px',
-                          background: effectOpen && selected ? theme.surfaceHover : 'transparent',
-                          border: 'none',
-                          borderRadius: '6px',
-                          color: selected ? theme.text : theme.textDim,
-                          cursor: 'pointer',
-                          transition: 'max-width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease, padding 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease'
-                        }}
-                      >
-                        {t(`config.hideMode_${mode}`)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <SubPickerRow
+                label={t('config.hideEffect')}
+                theme={theme}
+                enabled={activePreset.hideTimer}
+              >
+                <InlinePillPicker
+                  value={activePreset.hideTimerMode || 'blackout'}
+                  options={['glitch', 'blackout']}
+                  onChange={(v) => updateActivePreset({ hideTimerMode: v })}
+                  getLabel={(v) => t(`config.hideMode_${v}`)}
+                  theme={theme}
+                  disabled={!activePreset.hideTimer}
+                />
+              </SubPickerRow>
               <OptionToggle
                 checked={activePreset.hideNextSwitch}
                 onChange={() => updateActivePreset({ hideNextSwitch: !activePreset.hideNextSwitch })}
@@ -432,65 +423,27 @@ const ConfigScreen = ({
                 description={t('config.hideSwitchDesc')}
                 theme={theme}
               />
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginTop: '10px',
-                paddingTop: '14px',
-                borderTop: `1px solid ${theme.border}`
-              }}>
-                <span style={{
-                  fontFamily: "'Oswald', sans-serif",
-                  fontSize: '11px',
-                  color: theme.textDim,
-                  letterSpacing: '1px',
-                  flexShrink: 0
-                }}>{t('config.audioCues')}:</span>
-                <div
-                  onClick={!audioOpen ? () => setAudioOpen(true) : undefined}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    borderRadius: '7px',
-                    border: `1px solid ${audioOpen ? theme.border : theme.borderActive}`,
-                    background: audioOpen ? 'transparent' : theme.surfaceHover,
-                    padding: '1px',
-                    cursor: audioOpen ? 'default' : 'pointer',
-                    overflow: 'hidden',
-                    transition: 'border-color 0.2s ease, background 0.2s ease'
-                  }}
-                >
-                  {['voice', 'bells', 'off'].map(mode => {
-                    const selected = audioMode === mode;
-                    const collapsed = !audioOpen && !selected;
-                    return (
-                      <button
-                        key={mode}
-                        onClick={audioOpen ? () => { setAudioMode(mode); setAudioOpen(false); } : undefined}
-                        style={{
-                          padding: collapsed ? '4px 0' : '4px 11px',
-                          maxWidth: collapsed ? '0' : '100px',
-                          opacity: collapsed ? 0 : 1,
-                          overflow: 'hidden',
-                          whiteSpace: 'nowrap',
-                          fontSize: '11px',
-                          fontFamily: "'Oswald', sans-serif",
-                          letterSpacing: '1px',
-                          background: audioOpen && selected ? theme.surfaceHover : 'transparent',
-                          border: 'none',
-                          borderRadius: '6px',
-                          color: selected ? theme.text : theme.textDim,
-                          cursor: 'pointer',
-                          transition: 'max-width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease, padding 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease'
-                        }}
-                      >
-                        {t(`config.audio.${mode}Short`)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <OptionToggle
+                checked={audioEnabled}
+                onChange={() => setPresetAudio({ audioEnabled: !audioEnabled })}
+                label={t('config.audioCues')}
+                description={t('config.audioCuesDesc')}
+                theme={theme}
+              />
+              <SubPickerRow
+                label={t('config.audioStyle')}
+                theme={theme}
+                enabled={audioEnabled}
+              >
+                <InlinePillPicker
+                  value={audioMode}
+                  options={['voice', 'bells']}
+                  onChange={(v) => setPresetAudio({ audioMode: v })}
+                  getLabel={(v) => t(`config.audio.${v}Short`)}
+                  theme={theme}
+                  disabled={!audioEnabled}
+                />
+              </SubPickerRow>
             </div>
           </div>
 

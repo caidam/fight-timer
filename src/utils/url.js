@@ -12,12 +12,17 @@ export const encodePresetCompact = (preset) => {
   const rest = formatTimeShort(preset.restDuration);
   let s = `${name}/${preset.rounds}x${dur}/${rest}/${preset.timingMode}`;
   const flags = [];
-  if (preset.progressiveIntensity) flags.push('prog');
+  if (preset.progressiveIntensity) {
+    const strength = preset.progressiveStrength || 12;
+    if (strength === 8) flags.push('prog8');
+    else if (strength === 16) flags.push('prog16');
+    else flags.push('prog');
+  }
   if (preset.hideNextSwitch) flags.push('hide');
   if (preset.hideTimer) flags.push(preset.hideTimerMode === 'blackout' ? 'htblack' : 'htimer');
-  // Omit 'voice' from URL since it's the default — only encode non-default audio modes
-  if (preset.audioMode === 'bells') flags.push('abells');
-  else if (preset.audioMode === 'off') flags.push('aoff');
+  // Audio: default is enabled + voice — omit from URL. Encode only overrides.
+  if (preset.audioEnabled === false) flags.push('aoff');
+  else if (preset.audioMode === 'bells') flags.push('abells');
   if (flags.length) s += '+' + flags.join('+');
   if (preset.timingMode === 'custom') {
     s += `/i${preset.intenseMin}-${preset.intenseMax}/n${preset.normalMin}-${preset.normalMax}`;
@@ -54,13 +59,18 @@ export const decodePresetCompact = (str) => {
   preset.roundDuration = roundDuration;
   preset.restDuration = restDuration;
   preset.timingMode = timingMode;
-  preset.progressiveIntensity = mf.includes('prog');
+  preset.progressiveIntensity = mf.includes('prog') || mf.includes('prog8') || mf.includes('prog16');
+  preset.progressiveStrength = mf.includes('prog8') ? 8 : mf.includes('prog16') ? 16 : 12;
   preset.hideNextSwitch = mf.includes('hide');
   preset.hideTimer = mf.includes('htimer') || mf.includes('htblack');
   if (mf.includes('htblack')) preset.hideTimerMode = 'blackout';
-  if (mf.includes('abells')) preset.audioMode = 'bells';
-  else if (mf.includes('aoff')) preset.audioMode = 'off';
-  else preset.audioMode = 'voice';
+  if (mf.includes('aoff')) {
+    preset.audioEnabled = false;
+    preset.audioMode = 'voice';
+  } else {
+    preset.audioEnabled = true;
+    preset.audioMode = mf.includes('abells') ? 'bells' : 'voice';
+  }
   for (const p of parts.slice(4)) {
     if (timingMode === 'custom') {
       const im = p.match(/^i(\d+)-(\d+)$/);
