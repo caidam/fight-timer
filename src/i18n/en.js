@@ -142,6 +142,10 @@ export default {
   'config.audio.bells': 'Bells only',
   'config.audio.off': 'Silent',
 
+  // Update banner
+  'update.available': 'New version available',
+  'update.apply': 'UPDATE',
+
   // Share
   'share.title': 'Fight Timer',
   'share.text': 'Check out my training preset: {name}',

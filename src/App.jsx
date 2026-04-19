@@ -33,6 +33,7 @@ export default function App() {
   const [installBannerFolded, setInstallBannerFolded] = useState(() => {
     return localStorage.getItem('fight-timer-install-folded') === 'true';
   });
+  const [updateReady, setUpdateReady] = useState(false);
   const [themeId, setThemeId] = useState(() => {
     const stored = localStorage.getItem('fight-timer-theme');
     return (stored && THEMES[stored]) ? stored : 'gold';
@@ -410,6 +411,19 @@ export default function App() {
     if (meta) meta.setAttribute('content', theme.bg);
   }, [theme]);
 
+  // SW update banner — set by /sw.js registration (see index.html)
+  useEffect(() => {
+    const onReady = () => setUpdateReady(true);
+    window.addEventListener('sw-update-ready', onReady);
+    return () => window.removeEventListener('sw-update-ready', onReady);
+  }, []);
+
+  const applyUpdate = () => {
+    if (typeof window !== 'undefined' && window.__applySwUpdate) {
+      window.__applySwUpdate();
+    }
+  };
+
   // PWA install prompt detection
   useEffect(() => {
     const standaloneQuery = window.matchMedia('(display-mode: standalone)');
@@ -695,9 +709,45 @@ export default function App() {
     }
   `, [theme]);
 
+  const updateBanner = updateReady ? (
+    <div style={{
+      background: theme.accentSolid,
+      color: theme.bg,
+      padding: '10px 16px',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.3)'
+    }}>
+      <div style={{
+        maxWidth: '500px',
+        margin: '0 auto',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '14px',
+        fontFamily: "'Oswald', sans-serif",
+        fontSize: '13px',
+        letterSpacing: '1px'
+      }}>
+        <span>{t('update.available')}</span>
+        <button onClick={applyUpdate} style={{
+          background: theme.bg,
+          color: theme.accentSolid,
+          border: 'none',
+          borderRadius: '6px',
+          padding: '6px 14px',
+          fontFamily: "'Oswald', sans-serif",
+          fontSize: '12px',
+          fontWeight: 700,
+          letterSpacing: '1.5px',
+          cursor: 'pointer'
+        }}>{t('update.apply')}</button>
+      </div>
+    </div>
+  ) : null;
+
   if (screen === 'config') {
     return (
       <>
+        {updateBanner}
         <ConfigScreen
           containerRef={containerRef}
           theme={theme}
@@ -897,13 +947,16 @@ export default function App() {
 
   if (screen === 'summary') {
     return (
-      <SummaryScreen
-        containerRef={containerRef}
-        timerState={timerState}
-        theme={theme}
-        globalStyles={globalStyles}
-        onTrainAgain={() => setScreen('config')}
-      />
+      <>
+        {updateBanner}
+        <SummaryScreen
+          containerRef={containerRef}
+          timerState={timerState}
+          theme={theme}
+          globalStyles={globalStyles}
+          onTrainAgain={() => setScreen('config')}
+        />
+      </>
     );
   }
 

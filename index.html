@@ -74,7 +74,43 @@
     <script type="module" src="/src/main.jsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js');
+        var hasRequestedUpdate = false;
+        var announceUpdate = function () {
+          window.dispatchEvent(new CustomEvent('sw-update-ready'));
+        };
+        navigator.serviceWorker.register('/sw.js').then(function (reg) {
+          // A new SW may already be waiting from a prior visit.
+          if (reg.waiting && navigator.serviceWorker.controller) announceUpdate();
+
+          reg.addEventListener('updatefound', function () {
+            var newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', function () {
+              // Only treat as update when there's already an active controller
+              // (first-install has no previous controller).
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                announceUpdate();
+              }
+            });
+          });
+
+          // Re-check when the user returns to the tab.
+          document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') reg.update().catch(function () {});
+          });
+
+          window.__applySwUpdate = function () {
+            if (!reg.waiting) return;
+            hasRequestedUpdate = true;
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          };
+        }).catch(function () {});
+
+        // Reload only when the user explicitly asked for the update.
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (!hasRequestedUpdate) return;
+          window.location.reload();
+        });
       }
     </script>
   </body>

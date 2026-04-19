@@ -142,6 +142,10 @@ export default {
   'config.audio.bells': 'Cloches seules',
   'config.audio.off': 'Muet',
 
+  // Update banner
+  'update.available': 'Nouvelle version disponible',
+  'update.apply': 'METTRE \u00C0 JOUR',
+
   // Share
   'share.title': 'Fight Timer',
   'share.text': 'D\u00E9couvre mon pr\u00E9r\u00E9glage d\u2019entra\u00EEnement : {name}',

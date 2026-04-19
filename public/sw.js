@@ -1,6 +1,16 @@
-const CACHE_NAME = 'fight-timer-v2';
+const CACHE_NAME = 'fight-timer-v3';
 
-self.addEventListener('install', () => self.skipWaiting());
+// Don't auto-activate — new SW stays in "waiting" state until the client
+// explicitly sends a SKIP_WAITING message (triggered by the update banner).
+self.addEventListener('install', () => {
+  // intentionally no skipWaiting()
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
@@ -20,7 +30,28 @@ self.addEventListener('fetch', (event) => {
   const isFonts = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
   if (!isLocal && !isFonts) return;
 
-  // Stale-while-revalidate: serve from cache instantly, update in background
+  const isHTML =
+    request.mode === 'navigate' ||
+    (request.headers.get('accept') || '').includes('text/html');
+
+  // Network-first for HTML — updates propagate on first reload after deploy.
+  // Falls back to cache when offline.
+  if (isHTML) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        try {
+          const fresh = await fetch(request);
+          if (fresh.ok) cache.put(request, fresh.clone());
+          return fresh;
+        } catch {
+          return (await cache.match(request)) || Response.error();
+        }
+      })
+    );
+    return;
+  }
+
+  // Stale-while-revalidate for everything else.
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
       const cached = await cache.match(request);
