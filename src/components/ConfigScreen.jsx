@@ -375,6 +375,27 @@ const ConfigScreen = ({
 
             <div style={{ display: 'grid', gap: '4px' }}>
               <OptionToggle
+                checked={audioEnabled}
+                onChange={() => setPresetAudio({ audioEnabled: !audioEnabled })}
+                label={t('config.audioCues')}
+                description={t('config.audioCuesDesc')}
+                theme={theme}
+              />
+              <SubPickerRow
+                label={t('config.audioStyle')}
+                theme={theme}
+                enabled={audioEnabled}
+              >
+                <InlinePillPicker
+                  value={audioMode}
+                  options={['voice', 'bells']}
+                  onChange={(v) => setPresetAudio({ audioMode: v })}
+                  getLabel={(v) => t(`config.audio.${v}Short`)}
+                  theme={theme}
+                  disabled={!audioEnabled}
+                />
+              </SubPickerRow>
+              <OptionToggle
                 checked={activePreset.progressiveIntensity}
                 onChange={() => updateActivePreset({ progressiveIntensity: !activePreset.progressiveIntensity })}
                 label={t('config.progressiveIntensity')}
@@ -382,7 +403,7 @@ const ConfigScreen = ({
                 theme={theme}
               />
               <SubPickerRow
-                label={t('config.strength')}
+                label={t('config.rate')}
                 theme={theme}
                 enabled={activePreset.progressiveIntensity}
               >
@@ -423,27 +444,6 @@ const ConfigScreen = ({
                 description={t('config.hideSwitchDesc')}
                 theme={theme}
               />
-              <OptionToggle
-                checked={audioEnabled}
-                onChange={() => setPresetAudio({ audioEnabled: !audioEnabled })}
-                label={t('config.audioCues')}
-                description={t('config.audioCuesDesc')}
-                theme={theme}
-              />
-              <SubPickerRow
-                label={t('config.audioStyle')}
-                theme={theme}
-                enabled={audioEnabled}
-              >
-                <InlinePillPicker
-                  value={audioMode}
-                  options={['voice', 'bells']}
-                  onChange={(v) => setPresetAudio({ audioMode: v })}
-                  getLabel={(v) => t(`config.audio.${v}Short`)}
-                  theme={theme}
-                  disabled={!audioEnabled}
-                />
-              </SubPickerRow>
             </div>
           </div>
 
