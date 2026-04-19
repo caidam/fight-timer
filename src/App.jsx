@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { getAudioContext, sounds } from './utils/audio';
+import { sounds, setAudioMode, warmAudio } from './utils/audio';
 import { formatTimeShort, getRandomInRange } from './utils/time';
 import { TIMING_MODES } from './constants/timingModes';
 import { THEMES } from './constants/themes';
@@ -21,10 +21,12 @@ export default function App() {
   const [shareToast, setShareToast] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [showAudioPicker, setShowAudioPicker] = useState(false);
   const [pendingImport, setPendingImport] = useState(null);
   const [selectedImportIds, setSelectedImportIds] = useState({});
   const themePickerRef = useRef(null);
   const langPickerRef = useRef(null);
+  const audioPickerRef = useRef(null);
   const [hideSwitchLive, setHideSwitchLive] = useState(false);
   const [hideTimerLive, setHideTimerLive] = useState('visible');
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
@@ -37,6 +39,15 @@ export default function App() {
     return (stored && THEMES[stored]) ? stored : 'gold';
   });
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('fight-timer-mode') || 'dark');
+  const [audioModeState, setAudioModeState] = useState(() => {
+    const stored = localStorage.getItem('fight-timer-audio');
+    return (stored === 'voice' || stored === 'bells' || stored === 'off') ? stored : 'voice';
+  });
+  useEffect(() => { setAudioMode(audioModeState); }, [audioModeState]);
+  const changeAudioMode = (mode) => {
+    setAudioModeState(mode);
+    localStorage.setItem('fight-timer-audio', mode);
+  };
   const theme = THEMES[themeId][themeMode];
 
   const [timerState, setTimerState] = useState({
@@ -409,6 +420,18 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showLangPicker]);
 
+  // Close audio picker on outside click
+  useEffect(() => {
+    if (!showAudioPicker) return;
+    const handleClick = (e) => {
+      if (audioPickerRef.current && !audioPickerRef.current.contains(e.target)) {
+        setShowAudioPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showAudioPicker]);
+
   // Share
   const shareConfig = async () => {
     const url = window.location.href;
@@ -455,10 +478,7 @@ export default function App() {
   }, [config]);
 
   const startTraining = async () => {
-    const audioContext = getAudioContext();
-    if (audioContext?.state === 'suspended') {
-      await audioContext.resume();
-    }
+    await warmAudio();
     await requestWakeLock();
 
     if (config.warmupDuration > 0) {
@@ -676,6 +696,11 @@ export default function App() {
           showLangPicker={showLangPicker}
           setShowLangPicker={setShowLangPicker}
           langPickerRef={langPickerRef}
+          audioMode={audioModeState}
+          setAudioMode={changeAudioMode}
+          showAudioPicker={showAudioPicker}
+          setShowAudioPicker={setShowAudioPicker}
+          audioPickerRef={audioPickerRef}
           copyUrl={copyUrl}
           globalStyles={globalStyles}
           deferredInstallPrompt={deferredInstallPrompt}

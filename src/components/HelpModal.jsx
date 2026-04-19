@@ -119,9 +119,11 @@ const HelpModal = ({ onClose, theme }) => {
         </HelpSection>
 
         <HelpSection title={t('help.audioCues')} theme={th}>
-          <div style={{ color: th.textDim }}>
+          <div style={{ color: th.textDim, display: 'grid', gap: '4px' }}>
             <div>{t('help.audioIntense')}</div>
             <div>{t('help.audioNormal')}</div>
+            <div>{t('help.audioRound')}</div>
+            <div style={{ marginTop: '6px', fontSize: '12px' }}>{t('help.audioModes')}</div>
           </div>
         </HelpSection>
 

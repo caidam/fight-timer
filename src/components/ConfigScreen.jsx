@@ -4,6 +4,7 @@ import { formatTimeShort } from '../utils/time';
 import { useT } from '../i18n/I18nContext';
 import ThemePicker from './ThemePicker';
 import LanguagePicker from './LanguagePicker';
+import AudioPicker from './AudioPicker';
 import PresetManager from './PresetManager';
 import TimeInput from './TimeInput';
 import OptionToggle from './OptionToggle';
@@ -39,6 +40,11 @@ const ConfigScreen = ({
   showLangPicker,
   setShowLangPicker,
   langPickerRef,
+  audioMode,
+  setAudioMode,
+  showAudioPicker,
+  setShowAudioPicker,
+  audioPickerRef,
   copyUrl,
   globalStyles,
   deferredInstallPrompt,
@@ -115,6 +121,16 @@ const ConfigScreen = ({
               themeMode={themeMode}
               toggleMode={toggleMode}
             />
+            <div style={{ marginLeft: '16px' }}>
+              <AudioPicker
+                theme={theme}
+                audioMode={audioMode}
+                setAudioMode={setAudioMode}
+                showAudioPicker={showAudioPicker}
+                setShowAudioPicker={setShowAudioPicker}
+                audioPickerRef={audioPickerRef}
+              />
+            </div>
             <div style={{ marginLeft: '16px' }}>
               <LanguagePicker
                 theme={theme}

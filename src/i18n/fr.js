@@ -77,8 +77,10 @@ export default {
   'help.warmupCooldown': '\u00C9chauffement & Retour au calme',
   'help.warmupCooldownDesc': 'Phases de d\u00E9compte optionnelles avant et apr\u00E8s l\u2019entra\u00EEnement. R\u00E9glez \u00E0 0:00 pour d\u00E9sactiver.',
   'help.audioCues': 'SIGNAUX AUDIO',
-  'help.audioIntense': '\uD83D\uDD34 Double coup de cloche \u2192 INTENSE',
-  'help.audioNormal': '\uD83D\uDFE2 Simple coup de cloche \u2192 NORMAL',
+  'help.audioIntense': '\u00AB\u202FPush\u202F\u00BB \u2192 passage INTENSE',
+  'help.audioNormal': '\u00AB\u202FEase\u202F\u00BB \u2192 passage NORMAL',
+  'help.audioRound': 'Cloche + \u00AB\u202FFight\u202F\u00BB / \u00AB\u202FRest\u202F\u00BB \u2192 transitions de round',
+  'help.audioModes': 'Choisir Voix / Cloches / Muet dans l\u2019en-t\u00EAte.',
   'help.savingSharing': 'SAUVEGARDE & PARTAGE',
   'help.savedInUrl': 'Vos r\u00E9glages sont sauvegard\u00E9s dans l\u2019URL',
   'help.savedInUrlDesc': 'Ajoutez la page en favori ou utilisez COPIER URL pour la sauvegarder.',
@@ -122,6 +124,11 @@ export default {
   'install.bannerDesc': 'Plein écran hors ligne depuis votre écran d\u2019accueil.',
   'install.installButton': 'INSTALLER',
   'install.howTo': 'AIDE',
+
+  // Audio
+  'config.audio.voice': 'Signaux vocaux',
+  'config.audio.bells': 'Cloches seules',
+  'config.audio.off': 'Muet',
 
   // Share
   'share.title': 'Fight Timer',

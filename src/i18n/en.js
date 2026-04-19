@@ -77,8 +77,10 @@ export default {
   'help.warmupCooldown': 'Warm Up & Cool Down',
   'help.warmupCooldownDesc': 'Optional countdown phases before and after training. Set to 0:00 to disable.',
   'help.audioCues': 'AUDIO CUES',
-  'help.audioIntense': '\uD83D\uDD34 Double bell tap \u2192 INTENSE',
-  'help.audioNormal': '\uD83D\uDFE2 Single bell tap \u2192 NORMAL',
+  'help.audioIntense': '\u201CPush\u201D \u2192 switch to INTENSE',
+  'help.audioNormal': '\u201CEase\u201D \u2192 switch to NORMAL',
+  'help.audioRound': 'Bell + \u201CFight\u201D / \u201CRest\u201D \u2192 round transitions',
+  'help.audioModes': 'Pick Voice / Bells / Off in the header.',
   'help.savingSharing': 'SAVING & SHARING',
   'help.savedInUrl': 'Your settings are saved in the URL',
   'help.savedInUrlDesc': 'Bookmark the page or use COPY URL to save it anywhere.',
@@ -122,6 +124,11 @@ export default {
   'install.bannerDesc': 'Add to your home screen for full-screen offline use.',
   'install.installButton': 'INSTALL',
   'install.howTo': 'HOW TO',
+
+  // Audio
+  'config.audio.voice': 'Voice cues',
+  'config.audio.bells': 'Bells only',
+  'config.audio.off': 'Silent',
 
   // Share
   'share.title': 'Fight Timer',
