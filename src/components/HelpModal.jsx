@@ -119,11 +119,24 @@ const HelpModal = ({ onClose, theme }) => {
         </HelpSection>
 
         <HelpSection title={t('help.audioCues')} theme={th}>
-          <div style={{ color: th.textDim, display: 'grid', gap: '4px' }}>
-            <div>{t('help.audioIntense')}</div>
-            <div>{t('help.audioNormal')}</div>
-            <div>{t('help.audioRound')}</div>
-            <div style={{ marginTop: '6px', fontSize: '12px' }}>{t('help.audioModes')}</div>
+          <div style={{ color: th.textDim, display: 'grid', gap: '12px' }}>
+            <div>
+              <strong style={{ color: th.text }}>{t('help.audioModeVoice')}</strong>
+              <div style={{ marginTop: '4px', display: 'grid', gap: '2px' }}>
+                <div>{t('help.audioVoiceIntense')}</div>
+                <div>{t('help.audioVoiceNormal')}</div>
+                <div>{t('help.audioVoiceRound')}</div>
+              </div>
+            </div>
+            <div>
+              <strong style={{ color: th.text }}>{t('help.audioModeBells')}</strong>
+              <div style={{ marginTop: '4px', display: 'grid', gap: '2px' }}>
+                <div>{t('help.audioBellsIntense')}</div>
+                <div>{t('help.audioBellsNormal')}</div>
+                <div>{t('help.audioBellsRound')}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: '12px', fontStyle: 'italic' }}>{t('help.audioPerPreset')}</div>
           </div>
         </HelpSection>
 

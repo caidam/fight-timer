@@ -15,6 +15,9 @@ export const encodePresetCompact = (preset) => {
   if (preset.progressiveIntensity) flags.push('prog');
   if (preset.hideNextSwitch) flags.push('hide');
   if (preset.hideTimer) flags.push(preset.hideTimerMode === 'blackout' ? 'htblack' : 'htimer');
+  // Omit 'voice' from URL since it's the default — only encode non-default audio modes
+  if (preset.audioMode === 'bells') flags.push('abells');
+  else if (preset.audioMode === 'off') flags.push('aoff');
   if (flags.length) s += '+' + flags.join('+');
   if (preset.timingMode === 'custom') {
     s += `/i${preset.intenseMin}-${preset.intenseMax}/n${preset.normalMin}-${preset.normalMax}`;
@@ -55,6 +58,9 @@ export const decodePresetCompact = (str) => {
   preset.hideNextSwitch = mf.includes('hide');
   preset.hideTimer = mf.includes('htimer') || mf.includes('htblack');
   if (mf.includes('htblack')) preset.hideTimerMode = 'blackout';
+  if (mf.includes('abells')) preset.audioMode = 'bells';
+  else if (mf.includes('aoff')) preset.audioMode = 'off';
+  else preset.audioMode = 'voice';
   for (const p of parts.slice(4)) {
     if (timingMode === 'custom') {
       const im = p.match(/^i(\d+)-(\d+)$/);

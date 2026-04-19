@@ -21,14 +21,13 @@ export default function App() {
   const [shareToast, setShareToast] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
-  const [showAudioPicker, setShowAudioPicker] = useState(false);
   const [pendingImport, setPendingImport] = useState(null);
   const [selectedImportIds, setSelectedImportIds] = useState({});
   const themePickerRef = useRef(null);
   const langPickerRef = useRef(null);
-  const audioPickerRef = useRef(null);
   const [hideSwitchLive, setHideSwitchLive] = useState(false);
   const [hideTimerLive, setHideTimerLive] = useState('visible');
+  const [audioModeLive, setAudioModeLive] = useState('voice');
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [installBannerFolded, setInstallBannerFolded] = useState(() => {
@@ -39,15 +38,6 @@ export default function App() {
     return (stored && THEMES[stored]) ? stored : 'gold';
   });
   const [themeMode, setThemeMode] = useState(() => localStorage.getItem('fight-timer-mode') || 'dark');
-  const [audioModeState, setAudioModeState] = useState(() => {
-    const stored = localStorage.getItem('fight-timer-audio');
-    return (stored === 'voice' || stored === 'bells' || stored === 'off') ? stored : 'voice';
-  });
-  useEffect(() => { setAudioMode(audioModeState); }, [audioModeState]);
-  const changeAudioMode = (mode) => {
-    setAudioModeState(mode);
-    localStorage.setItem('fight-timer-audio', mode);
-  };
   const theme = THEMES[themeId][themeMode];
 
   const [timerState, setTimerState] = useState({
@@ -71,6 +61,26 @@ export default function App() {
 
   const activePreset = presets.find(p => p.id === activePresetId) || presets[0];
   const config = useMemo(() => applyTimingMode(activePreset), [presets, activePresetId]);
+
+  // Keep audio engine in sync with active preset on the config screen.
+  // During training, audioModeLive takes over.
+  useEffect(() => {
+    if (screen === 'config') setAudioMode(activePreset?.audioMode || 'voice');
+  }, [screen, activePreset?.audioMode]);
+
+  // Changing the active preset's audio mode also updates the "default for new
+  // presets" localStorage hint, so creating a new preset inherits the user's
+  // most recent preference.
+  const setActivePresetAudio = (mode) => {
+    updateActivePreset({ audioMode: mode });
+    try { localStorage.setItem('fight-timer-audio', mode); } catch {}
+  };
+
+  // In-session setter — mutates the live mode only, never the preset.
+  const setAudioModeLiveAndSync = (mode) => {
+    setAudioModeLive(mode);
+    setAudioMode(mode);
+  };
 
   // Process URL hash: show import dialog if foreign, or load directly if no saved presets
   const processHash = useCallback((hash, existingPresets) => {
@@ -102,6 +112,10 @@ export default function App() {
 
   // Load state from URL on mount, fall back to localStorage (for PWA launches)
   useEffect(() => {
+    // Legacy presets pre-dating audioMode default to 'voice'
+    const migrate = (p) => p.audioMode ? p : { ...p, audioMode: 'voice' };
+    const migrateAll = (list) => list.map(migrate);
+
     const hash = window.location.hash.slice(1);
     if (hash) {
       let savedData = null;
@@ -110,7 +124,7 @@ export default function App() {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed.presets) && parsed.presets.length > 0) {
-            savedData = parsed;
+            savedData = { ...parsed, presets: migrateAll(parsed.presets) };
           }
         }
       } catch {}
@@ -129,7 +143,7 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed.presets) && parsed.presets.length > 0) {
-          setPresets(parsed.presets);
+          setPresets(migrateAll(parsed.presets));
           setActivePresetId(parsed.activePresetId || parsed.presets[0].id);
           return;
         }
@@ -226,7 +240,8 @@ export default function App() {
       na.progressiveIntensity === nb.progressiveIntensity &&
       na.hideNextSwitch === nb.hideNextSwitch &&
       na.hideTimer === nb.hideTimer &&
-      (na.hideTimerMode || 'glitch') === (nb.hideTimerMode || 'glitch');
+      (na.hideTimerMode || 'glitch') === (nb.hideTimerMode || 'glitch') &&
+      (na.audioMode || 'voice') === (nb.audioMode || 'voice');
   };
 
   const toggleImportSelection = (id) => {
@@ -420,18 +435,6 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showLangPicker]);
 
-  // Close audio picker on outside click
-  useEffect(() => {
-    if (!showAudioPicker) return;
-    const handleClick = (e) => {
-      if (audioPickerRef.current && !audioPickerRef.current.contains(e.target)) {
-        setShowAudioPicker(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [showAudioPicker]);
-
   // Share
   const shareConfig = async () => {
     const url = window.location.href;
@@ -515,6 +518,9 @@ export default function App() {
     setScreen('training');
     setHideSwitchLive(config.hideNextSwitch);
     setHideTimerLive(config.hideTimer ? (config.hideTimerMode || 'blackout') : 'visible');
+    const presetAudio = activePreset?.audioMode || 'voice';
+    setAudioModeLive(presetAudio);
+    setAudioMode(presetAudio);
   };
 
   const togglePause = () => {
@@ -696,11 +702,8 @@ export default function App() {
           showLangPicker={showLangPicker}
           setShowLangPicker={setShowLangPicker}
           langPickerRef={langPickerRef}
-          audioMode={audioModeState}
-          setAudioMode={changeAudioMode}
-          showAudioPicker={showAudioPicker}
-          setShowAudioPicker={setShowAudioPicker}
-          audioPickerRef={audioPickerRef}
+          audioMode={activePreset?.audioMode || 'voice'}
+          setAudioMode={setActivePresetAudio}
           copyUrl={copyUrl}
           globalStyles={globalStyles}
           deferredInstallPrompt={deferredInstallPrompt}
@@ -888,6 +891,8 @@ export default function App() {
       setHideSwitchLive={setHideSwitchLive}
       hideTimerLive={hideTimerLive}
       setHideTimerLive={setHideTimerLive}
+      audioModeLive={audioModeLive}
+      setAudioModeLive={setAudioModeLiveAndSync}
       toggleFullscreen={toggleFullscreen}
       togglePause={togglePause}
       stopTraining={stopTraining}

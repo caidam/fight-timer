@@ -4,7 +4,6 @@ import { formatTimeShort } from '../utils/time';
 import { useT } from '../i18n/I18nContext';
 import ThemePicker from './ThemePicker';
 import LanguagePicker from './LanguagePicker';
-import AudioPicker from './AudioPicker';
 import PresetManager from './PresetManager';
 import TimeInput from './TimeInput';
 import OptionToggle from './OptionToggle';
@@ -42,9 +41,6 @@ const ConfigScreen = ({
   langPickerRef,
   audioMode,
   setAudioMode,
-  showAudioPicker,
-  setShowAudioPicker,
-  audioPickerRef,
   copyUrl,
   globalStyles,
   deferredInstallPrompt,
@@ -55,6 +51,7 @@ const ConfigScreen = ({
 }) => {
   const { t } = useT();
   const [effectOpen, setEffectOpen] = useState(false);
+  const [audioOpen, setAudioOpen] = useState(false);
 
   return (
     <div ref={containerRef} style={{
@@ -121,16 +118,6 @@ const ConfigScreen = ({
               themeMode={themeMode}
               toggleMode={toggleMode}
             />
-            <div style={{ marginLeft: '16px' }}>
-              <AudioPicker
-                theme={theme}
-                audioMode={audioMode}
-                setAudioMode={setAudioMode}
-                showAudioPicker={showAudioPicker}
-                setShowAudioPicker={setShowAudioPicker}
-                audioPickerRef={audioPickerRef}
-              />
-            </div>
             <div style={{ marginLeft: '16px' }}>
               <LanguagePicker
                 theme={theme}
@@ -445,6 +432,65 @@ const ConfigScreen = ({
                 description={t('config.hideSwitchDesc')}
                 theme={theme}
               />
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginTop: '10px',
+                paddingTop: '14px',
+                borderTop: `1px solid ${theme.border}`
+              }}>
+                <span style={{
+                  fontFamily: "'Oswald', sans-serif",
+                  fontSize: '11px',
+                  color: theme.textDim,
+                  letterSpacing: '1px',
+                  flexShrink: 0
+                }}>{t('config.audioCues')}:</span>
+                <div
+                  onClick={!audioOpen ? () => setAudioOpen(true) : undefined}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    borderRadius: '7px',
+                    border: `1px solid ${audioOpen ? theme.border : theme.borderActive}`,
+                    background: audioOpen ? 'transparent' : theme.surfaceHover,
+                    padding: '1px',
+                    cursor: audioOpen ? 'default' : 'pointer',
+                    overflow: 'hidden',
+                    transition: 'border-color 0.2s ease, background 0.2s ease'
+                  }}
+                >
+                  {['voice', 'bells', 'off'].map(mode => {
+                    const selected = audioMode === mode;
+                    const collapsed = !audioOpen && !selected;
+                    return (
+                      <button
+                        key={mode}
+                        onClick={audioOpen ? () => { setAudioMode(mode); setAudioOpen(false); } : undefined}
+                        style={{
+                          padding: collapsed ? '4px 0' : '4px 11px',
+                          maxWidth: collapsed ? '0' : '100px',
+                          opacity: collapsed ? 0 : 1,
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          fontSize: '11px',
+                          fontFamily: "'Oswald', sans-serif",
+                          letterSpacing: '1px',
+                          background: audioOpen && selected ? theme.surfaceHover : 'transparent',
+                          border: 'none',
+                          borderRadius: '6px',
+                          color: selected ? theme.text : theme.textDim,
+                          cursor: 'pointer',
+                          transition: 'max-width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease, padding 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease'
+                        }}
+                      >
+                        {t(`config.audio.${mode}Short`)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 

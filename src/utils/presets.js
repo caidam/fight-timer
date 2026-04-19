@@ -1,5 +1,11 @@
 import { TIMING_MODES } from '../constants/timingModes';
 
+const getUserAudioDefault = () => {
+  if (typeof localStorage === 'undefined') return 'voice';
+  const v = localStorage.getItem('fight-timer-audio');
+  return (v === 'voice' || v === 'bells' || v === 'off') ? v : 'voice';
+};
+
 export const createDefaultPreset = (name = 'Preset 1') => ({
   id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
   name,
@@ -16,7 +22,8 @@ export const createDefaultPreset = (name = 'Preset 1') => ({
   hideTimer: false,
   hideTimerMode: 'blackout',
   warmupDuration: 0,
-  cooldownDuration: 0
+  cooldownDuration: 0,
+  audioMode: getUserAudioDefault()
 });
 
 export const applyTimingMode = (preset) => {

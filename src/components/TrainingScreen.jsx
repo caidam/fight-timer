@@ -25,6 +25,8 @@ const intensityColors = {
   }
 };
 
+const AUDIO_CYCLE = { voice: 'bells', bells: 'off', off: 'voice' };
+
 const TrainingScreen = ({
   containerRef,
   timerState,
@@ -35,6 +37,8 @@ const TrainingScreen = ({
   setHideSwitchLive,
   hideTimerLive,
   setHideTimerLive,
+  audioModeLive,
+  setAudioModeLive,
   toggleFullscreen,
   togglePause,
   stopTraining,
@@ -143,17 +147,38 @@ const TrainingScreen = ({
           )}
         </div>
 
-        <button onClick={toggleFullscreen} style={{
-          background: 'rgba(255,255,255,0.1)',
-          border: 'none',
-          borderRadius: '8px',
-          padding: '10px 14px',
-          color: '#fff',
-          fontSize: '20px',
-          cursor: 'pointer'
-        }}>
-          {isFullscreen ? '\u2299' : '\u26F6'}
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            onClick={() => setAudioModeLive(AUDIO_CYCLE[audioModeLive] || 'voice')}
+            aria-label={t(`config.audio.${audioModeLive}Short`)}
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 12px',
+              color: '#fff',
+              fontSize: '11px',
+              fontFamily: "'Oswald', sans-serif",
+              fontWeight: 700,
+              letterSpacing: '1.5px',
+              cursor: 'pointer',
+              minWidth: '62px'
+            }}
+          >
+            {t(`config.audio.${audioModeLive}Short`)}
+          </button>
+          <button onClick={toggleFullscreen} style={{
+            background: 'rgba(255,255,255,0.1)',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            color: '#fff',
+            fontSize: '20px',
+            cursor: 'pointer'
+          }}>
+            {isFullscreen ? '\u2299' : '\u26F6'}
+          </button>
+        </div>
       </div>
 
       {phase !== 'warmup' && phase !== 'cooldown' && (
